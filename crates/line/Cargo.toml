@@ -1,0 +1,15 @@
+[package]
+name = "line"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+directions.workspace = true
+calibration.workspace = true
+speed.workspace = true

@@ -1,0 +1,12 @@
+[package]
+name = "pwm"
+version = "0.1.0"
+edition = "2021"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+rppal.workspace = true

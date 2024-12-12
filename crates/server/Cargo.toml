@@ -1,0 +1,30 @@
+[package]
+name = "server"
+version = "0.1.0"
+edition = "2021"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow.workspace = true
+axum = { version = "0.7.9", features = ["http2", "macros"] }
+clap.workspace = true
+serde = { version = "1.0.215", features = ["serde_derive"] }
+tokio = { version = "1.42.0", features = ["full"] }
+tower-http = { version = "0.6.2", features = ["trace"] }
+tracing = { version = "0.1.41" }
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }
+
+interfaces.workspace = true
+defaults.workspace = true
+line.workspace = true
+oscillate.workspace = true
+calibration.workspace = true
+consts.workspace = true
+speed.workspace = true
+components.workspace = true
+vehicle.workspace = true
+acceleration.workspace = true
+directions.workspace = true
+demo.workspace = true

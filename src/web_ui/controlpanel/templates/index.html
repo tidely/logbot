@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="centered">
+    <h1 class="windows-xp-header">LogBot</h1>
+    <img src="static/logbot_image.webp" />
+    {% if not current_user.is_authenticated %}
+    <p class="msgbg">You are not logged in. Please login to continue.</p>
+    {% endif %}
+</div>
+{% endblock %}

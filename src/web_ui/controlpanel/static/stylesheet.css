@@ -1,0 +1,341 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+.controls p {
+    margin: 15px;
+}
+
+.msgbg {
+    font-family: monospace;
+    font-size: 22px;
+    background-color: rgba(0, 0, 0, 0.5);
+    color: white;
+    padding: 10px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+}
+
+body {
+    background-color: #929998;
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+    overflow: -moz-scrollbars-none;  /* Firefox old */
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+    background: url("winxp_bg.jpg");
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
+}
+
+body::-webkit-scrollbar { 
+    display: none;  /* Safari and Chrome */
+}
+
+.header {
+    display: flex;
+    align-items: stretch;
+    justify-content: space-between;
+    height: 5vh;
+    background: linear-gradient(180deg, #0997ff 0%, #0053ee 8%, #0050ee 40%, #06f 88%, #06f 93%, #005bff 95%, #003dd7 96%, #003dd7 100%)
+}
+
+.navbar {
+    display: flex;
+    justify-content: flex-end;
+    height: 100%;
+    align-items: center;
+}
+
+.navbar a {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-left: 20px;
+    padding-right: 20px;
+    height: 100%;
+    color: white;
+    font-family: "Trebuchet MS";
+    text-shadow: 1px 1px #0f1089;
+    text-decoration: none;
+}
+
+.navbar a:hover {
+    background: linear-gradient(180deg, #0989e5 0%, #004ad3 8%, #0046d3 40%, #005be5 88%, #005be5 93%, #0050e5 95%, #0035bc 96%, #0035bc 100%);
+}
+
+.header p {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-left: 20px;
+    padding-right: 20px;
+    height: 100%;
+    color: white;
+    font-family: "Trebuchet MS";
+    text-shadow: 1px 1px #0f1089;
+    text-decoration: none;
+}
+
+.content {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    align-items: center;
+}
+
+.centered {
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+}
+
+.login {
+    width: 350px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+}
+
+.login label {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    font-family: monospace;
+    font-size: 18px;
+}
+
+.login button {
+    padding: 10px;
+    width: 25%;
+    height: 50%;
+    font-size: 18px;
+}
+
+.notification {
+    font-family: monospace;
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+.video {
+    display: flex;
+}
+
+.left-box {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+.controls {
+    font-family: monospace;
+    font-size: 18px;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    margin-top: 15px;
+    margin-left: 15px;
+    justify-content: space-around;
+}
+
+.centered img {
+    border: 1px solid black;
+    border-radius: 8px;
+    margin-bottom: 15px;
+}
+
+.controls button {
+    height: 30px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    margin: 15px;
+    width: 100px;
+    justify-content: center;
+}
+
+.controlpanel {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+    align-items: flex-start;
+}
+
+.windows-xp-header {
+  font-family: "Trebuchet MS";
+  background: linear-gradient(180deg, #0997ff 0%, #0053ee 8%, #0050ee 40%, #06f 88%, #06f 93%, #005bff 95%, #003dd7 96%, #003dd7 100%);
+  padding: 3px 5px 3px 3px;
+  border-top: 1px solid #0831d9;
+  border-left: 1px solid #0831d9;
+  border-right: 1px solid #001ea0;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 7px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 7px;
+  font-size: 28px;
+  text-shadow: 1px 1px #0f1089;
+  height: 75px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 350px;
+  color: white;
+  margin-bottom: 15px;
+}
+
+/*-------------------------------------------*\
+Windows XP Buttons
+ \*-------------------------------------------*/
+button {
+  font-family: var(--sans-serif);
+  -webkit-font-smoothing: antialiased;
+  font-size: 11px;
+  box-sizing: border-box;
+  border: 1px solid #003c74;
+  background: linear-gradient(180deg, white 0%, #ecebe5 86%, #d8d0c4 100%);
+  box-shadow: none;
+  border-radius: 3px;
+}
+button:not(:disabled):active, button:not(:disabled).active {
+  box-shadow: none;
+  background: linear-gradient(180deg, #cdcac3 0%, #e3e3db 8%, #e5e5de 94%, #f2f2f1 100%);
+}
+button:not(:disabled):hover {
+  box-shadow: inset -1px 1px #fff0cf, inset 1px 2px #fdd889, inset -2px 2px #fbc761, inset 2px -2px #e5a01a;
+}
+button:focus, button.focused {
+  box-shadow: inset -1px 1px #cee7ff, inset 1px 2px #98b8ea, inset -2px 2px #bcd4f6, inset 1px -1px #89ade4, inset 2px -2px #89ade4;
+}
+button::-moz-focus-inner {
+  border: 0;
+}
+
+/*-------------------------------------------*\
+ Window
+ \*-------------------------------------------*/
+.window {
+  box-shadow: inset -1px -1px #00138c, inset 1px 1px #0831d9, inset -2px -2px #001ea0, inset 2px 2px #166aee, inset -3px -3px #003bda, inset 3px 3px #0855dd;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  padding: 0 0 3px 0;
+  -webkit-font-smoothing: antialiased;
+  display: inline-flex;
+  flex-direction: column;
+}
+.title-bar {
+  font-family: "Trebuchet MS";
+  background: linear-gradient(180deg, #0997ff 0%, #0053ee 8%, #0050ee 40%, #06f 88%, #06f 93%, #005bff 95%, #003dd7 96%, #003dd7 100%);
+  padding: 3px 5px 3px 3px;
+  border-top: 1px solid #0831d9;
+  border-left: 1px solid #0831d9;
+  border-right: 1px solid #001ea0;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 7px;
+  font-size: 13px;
+  text-shadow: 1px 1px #0f1089;
+  height: 21px;
+  display: flex;
+  justify-content: space-between;
+  color: white;
+  align-items: center;
+  width: 636px;
+}
+.title-bar-text {
+  padding-left: 3px;
+}
+.title-bar-controls {
+  display: flex;
+}
+.title-bar-controls button {
+  min-width: 21px;
+  min-height: 21px;
+  margin-left: 2px;
+  background-repeat: no-repeat;
+  background-position: center;
+  box-shadow: none;
+  background-color: #0050ee;
+  transition: background 100ms;
+  border: none;
+}
+.title-bar-controls button:active, .title-bar-controls button:hover, .title-bar-controls button:focus {
+  box-shadow: none !important;
+}
+.title-bar-controls button[aria-label="Minimize"] {
+  background-image: url("./icon/minimize.svg");
+}
+.title-bar-controls button[aria-label="Minimize"]:hover {
+  background-image: url("./icon/minimize-hover.svg");
+}
+.title-bar-controls button[aria-label="Minimize"]:not(:disabled):active {
+  background-image: url("./icon/minimize-active.svg");
+}
+.title-bar-controls button[aria-label="Maximize"] {
+  background-image: url("./icon/maximize.svg");
+}
+.title-bar-controls button[aria-label="Maximize"]:hover {
+  background-image: url("./icon/maximize-hover.svg");
+}
+.title-bar-controls button[aria-label="Maximize"]:not(:disabled):active {
+  background-image: url("./icon/maximize-active.svg");
+}
+.title-bar-controls button[aria-label="Restore"] {
+  background-image: url("./icon/restore.svg");
+}
+.title-bar-controls button[aria-label="Restore"]:hover {
+  background-image: url("./icon/restore-hover.svg");
+}
+.title-bar-controls button[aria-label="Restore"]:not(:disabled):active {
+  background-image: url("./icon/restore-active.svg");
+}
+.title-bar-controls button[aria-label="Help"] {
+  background-image: url("./icon/help.svg");
+}
+.title-bar-controls button[aria-label="Help"]:hover {
+  background-image: url("./icon/help-hover.svg");
+}
+.title-bar-controls button[aria-label="Help"]:not(:disabled):active {
+  background-image: url("./icon/help-active.svg");
+}
+.title-bar-controls button[aria-label="Close"] {
+  background-image: url("./icon/close.svg");
+}
+.title-bar-controls button[aria-label="Close"]:hover {
+  background-image: url("./icon/close-hover.svg");
+}
+.title-bar-controls button[aria-label="Close"]:not(:disabled):active {
+  background-image: url("./icon/close-active.svg");
+}
+.status-bar {
+  margin: 0 3px;
+  box-shadow: inset 0px 1px 2px var(--button-shadow);
+  padding: 2px 1px;
+  gap: 0px;
+}
+.status-bar-field {
+  font-family: var(--sans-serif);
+  -webkit-font-smoothing: antialiased;
+  box-shadow: none;
+  padding: 1px 2px;
+  border-right: 1px solid rgba(208, 206, 191, 0.75);
+  border-left: 1px solid rgba(255, 255, 255, 0.75);
+}
+.status-bar-field:first-of-type {
+  border-left: none;
+}
+.status-bar-field:last-of-type {
+  border-right: none;
+}
+.window-body {
+    margin-left: 3px;
+    margin-right: 3px;
+}

@@ -1,0 +1,14 @@
+[Unit]
+Description=Start video streaming on startup
+After=network.target
+
+[Service]
+User=logbot
+Group=logbot
+WorkingDirectory=/home/logbot/sahkopaja/src
+ExecStart=/home/logbot/sahkopaja/src/video.py
+Restart=on-failure
+RestartSec=1s
+
+[Install]
+WantedBy=multi-user.target

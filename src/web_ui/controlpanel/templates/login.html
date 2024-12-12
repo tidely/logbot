@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="centered">
+  <h1 class="windows-xp-header">Login</h1>
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+    <div class="notification">
+      {{ messages[0] }}
+    </div>
+  {% endif %}
+  {% endwith %}
+  <form class="login" method="POST">
+    <label>
+      Username:
+      <input type="text" name="username">
+    </label>
+    <label>
+      Password:
+      <input type="password" name="password">
+    </label>
+    <label>
+      Remember me:
+      <input type="checkbox" name="remember">
+    </label>
+    <button type="submit">Login</button>
+  </form>
+</div>
+{% endblock %}

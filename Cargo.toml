@@ -1,0 +1,59 @@
+[workspace]
+resolver = "2"
+members = [
+    # Binaries
+    "crates/cli",
+    "crates/server",
+    "crates/demo",
+    "crates/chart",
+    "crates/pwm",    # Calibrate Hardware PWM Pulse Widths
+
+    # Libraries
+    "crates/interfaces",
+    "crates/event_list",
+    "crates/vehicle",
+    "crates/speed",
+    "crates/directions",
+    "crates/calibration",
+    "crates/oscillate",
+    "crates/line",
+    "crates/acceleration",
+
+    # Crates with hardcoded implementations
+    "crates/components",
+    "crates/consts",
+    "crates/defaults",
+]
+
+[workspace.lints.rust]
+missing_docs = "deny"
+missing_debug_implementations = "deny"
+missing_copy_implementations = "warn"
+unused_crate_dependencies = "warn"
+
+[workspace.dependencies]
+driver = { path = "src/driver" }
+
+# New abstractions
+interfaces = { path = "crates/interfaces" }
+event_list = { path = "crates/event_list" }
+speed = { path = "crates/speed" }
+directions = { path = "crates/directions" }
+vehicle = { path = "crates/vehicle" }
+oscillate = { path = "crates/oscillate" }
+calibration = { path = "crates/calibration" }
+line = { path = "crates/line" }
+acceleration = { path = "crates/acceleration" }
+
+# Crates with hardcoded implementations
+consts = { path = "crates/consts" }
+components = { path = "crates/components" }
+defaults = { path = "crates/defaults" }
+demo = { path = "crates/demo" }
+
+# 3rd party dependencies
+anyhow = { version = "1.0.93" }
+clap = { version = "4.5.21", features = ["derive"] }
+# Waiting on: https://github.com/golemparts/rppal/pull/169
+rppal = { git = "https://github.com/tidely/rppal" }
+crossterm = { version = "0.28.1" }

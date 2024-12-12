@@ -1,0 +1,12 @@
+[Unit]
+Description=Gunicorn instance for logbot controlpanel.
+After=network.target
+
+[Service]
+User=logbot
+Group=logbot
+WorkingDirectory=/home/logbot/sahkopaja/src/web_ui
+ExecStart=/usr/bin/gunicorn --reload --workers 3 --bind 127.0.0.1:5000 -m 007 wsgi:app
+
+[Install]
+WantedBy=multi-user.target

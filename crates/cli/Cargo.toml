@@ -1,0 +1,22 @@
+[package]
+name = "cli"
+version = "0.1.0"
+edition = "2021"
+
+[lints]
+workspace = true
+
+[dependencies]
+consts.workspace = true
+interfaces.workspace = true
+components.workspace = true
+vehicle.workspace = true
+oscillate.workspace = true
+calibration.workspace = true
+speed.workspace = true
+defaults.workspace = true
+directions.workspace = true
+line.workspace = true
+
+anyhow.workspace = true
+crossterm = { version = "0.28.1" }

@@ -1,0 +1,16 @@
+[package]
+name = "chart"
+version = "0.1.0"
+edition = "2021"
+
+[lints]
+workspace = true
+
+[dependencies]
+anyhow.workspace = true
+ratatui = { version = "0.29.0" }
+
+interfaces.workspace = true
+components.workspace = true
+consts.workspace = true
+defaults.workspace = true

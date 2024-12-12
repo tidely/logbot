@@ -1,0 +1,16 @@
+[package]
+name = "components"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+path = "src/lib.rs"
+
+[lints]
+workspace = true
+
+[dependencies]
+directions.workspace = true
+interfaces.workspace = true
+speed.workspace = true
+rppal.workspace = true

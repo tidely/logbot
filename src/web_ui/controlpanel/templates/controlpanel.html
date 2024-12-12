@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block content %}
+<script src="static/script.js"></script>
+<div class="centered">
+    <h1 class="windows-xp-header">Control Panel</h1>
+</div>
+<div class="controlpanel">
+    <div class="left-box">
+        <div class="window">
+            <div class="title-bar">
+                <div class="title-bar-text">Live Video Feed</div>
+                <div class="title-bar-controls">
+                    <button aria-label="Minimize" onclick="closeWindow()"></button>
+                    <button aria-label="Maximize" onclick="openWindow()"></button>
+                    <button aria-label="Close" onclick="xPressed()"></button>
+                </div>
+            </div>
+            <div class="window-body" id="window-body">
+                <div class="video">
+                    <img id="livefeed" src="/stream" onerror="livefeedOffline()"></img>
+                </div>
+            </div>
+        </div>
+        <p class="msgbg" id="result" style="display: none;"></p>
+    </div>
+    <div class="controls" id="controls">
+        <div class="driving" id="driving">
+            <p>Driving:</p>
+            <button onclick="callAPI('calibrate')">Calibrate</button>
+            <button onclick="callAPI('edge')">Find Edge</button>
+            <button onclick="callAPI('follow')">Follow Line</button>
+            <button onclick="callAPI('stop')">Stop</button>
+        </div>
+        <div class="lift" id="lift">
+            <p>Lift:</p>
+            <button>Raise lift</button>
+            <button>Lower lift</button>
+        </div>
+        <div class="camera" id="camera">
+            <p>Camera:</p>
+            <button onclick="readQR()">Read QR</button>
+        </div>
+    </div>
+</div>
+{% endblock %}

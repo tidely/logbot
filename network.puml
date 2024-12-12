@@ -1,0 +1,60 @@
+@startuml
+
+skinparam Arrow {
+    MessageAlignment left
+    Color Green
+    Thickness 2
+}
+
+skinparam componentStyle rectangle
+
+component Client as client
+
+node "Raspberry Pi" as rpi {
+    component "Firewall (UFW)" as ufw
+    note bottom of ufw: Firewall configuration:\nDefault action: DENY ALL\nALLOW 22/tcp (IPv4 & IPv6) from Anywhere\nALLOW 80 (IPv4 & IPv6) from Anywhere
+
+    folder "Web Stack" {
+        component "\nReverse proxy (nginx)" as nginx {
+            portin 80
+        }
+
+        together {
+            component "\nGunicorn + Flask" as webui {
+                portin 5000
+            }
+
+            component "\nLogBot REST API" as api {
+                portin 9999
+            }
+
+            component "\nLive Video Feed" as video {
+                portin 8080
+            }
+        }
+
+        nginx <-r-> 5000: /{login,controlpanel,qrcode,logout}
+        nginx <-r-> 9999: /v1/{calibrate,edge,follow,stop,health}
+        nginx <-r-> 8080: /stream
+
+        webui -[hidden]-> api
+        api -[hidden]-> video
+
+    }
+
+    folder "Management" {
+        component "\nSSH" as ssh {
+            portin 22
+        }
+    }
+
+    Management -[hidden]-> ufw
+
+    ufw <-> 80
+    ufw <-l-> 22
+}
+
+client <-d-> ufw
+client -[hidden]-> rpi
+
+@enduml
