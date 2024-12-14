@@ -12,6 +12,10 @@ Full demo and 3D renders:
 
 [Full working Demo](./assets/demo.mp4)
 
+### Grants
+
+All project members were awarded the "Sähkössä on ideaa" grant by the [Ulla Tuominen Foundation](https://ullatuominen.fi/) in collaboration with Aalto University.
+
 ## Design
 
 logbot serves a website using a raspberry pi that allows the user to control hardware components on a high level. We also include a keyboard demo, which allows driving logbot as you would in a video game using the WASD keys.
@@ -68,3 +72,12 @@ Information about the GPIO pin connections can be found [here](./docs/PINS.md)
 Our network structure can be visualized with the following [PUML file](./network.puml).
 
 ![Network Graph](./images/network.png)
+
+## Credits
+
+GitHub profiles of all team members:
+
+- [otmaster6](https://github.com/otmaster6)
+- [Salalammas](https://github.com/Salalammas)
+- [Sanduuz](https://github.com/Sanduuz)
+- [tidely](https://github.com/tidely)
