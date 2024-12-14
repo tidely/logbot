@@ -14,7 +14,7 @@ Full demo and 3D renders:
 
 ### Grants
 
-All project members were awarded the "Sähkössä on ideaa" grant by the [Ulla Tuominen Foundation](https://ullatuominen.fi/) in collaboration with Aalto University.
+All project members were awarded the "Sähkössä on ideaa" grant by the [Ulla Tuominen Foundation](https://ullatuominen.fi/) in collaboration with Aalto University. (13th December 2024)
 
 ## Design
 
