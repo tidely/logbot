@@ -54,6 +54,5 @@ demo = { path = "crates/demo" }
 # 3rd party dependencies
 anyhow = { version = "1.0.93" }
 clap = { version = "4.5.21", features = ["derive"] }
-# Waiting on: https://github.com/golemparts/rppal/pull/169
-rppal = { git = "https://github.com/tidely/rppal" }
+rppal = { version = "0.22.1" }
 crossterm = { version = "0.28.1" }
