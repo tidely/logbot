@@ -20,71 +20,57 @@ use vehicle::Vehicle;
 
 const DEFAULT_SPEED: Speed = unsafe { Speed::new_unchecked(0.1) };
 
+/// The [`Result`] of a [`Request`]
+///
+/// The Ok() variant means the command was executed successfully.
+/// Containing the previous Command it cancelled.
+///
+/// The Err() variant means the command failed. The reason is contained
+/// within the Err.
+pub type CommandResult = Result<Command, CommandDenied>;
+
+/// [`Request`] execution of a [`Command`] from the [`Hardware`] thread
+pub type Request = (Command, oneshot::Sender<CommandResult>);
+
 /// Command that contains a channel to send a response into
 #[derive(Debug)]
 pub enum Command {
     /// Health check
-    Health(oneshot::Sender<()>),
-    FollowLine(oneshot::Sender<FollowLineResult>),
-    Calibrate(oneshot::Sender<CalibrateResult>),
-    FindEdge(oneshot::Sender<FindEdgeResult>),
-    Stop(oneshot::Sender<StopResult>),
+    Health,
+    FollowLine,
+    Calibrate,
+    FindEdge,
+    Stop,
     // Runs the full demo, also prevents health checks from going through
     // conveniently turning off the control buttons
-    Demo(oneshot::Sender<DemoResult>),
+    Demo,
 }
 
-/// Result of a [`Command::Demo`] call
-#[derive(Debug, Clone, Copy)]
-pub enum DemoResult {
-    Success,
+impl Command {
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Stop => "Stop",
+            Self::Calibrate => "Calibrate",
+            Self::FindEdge => "FindEdge",
+            Self::FollowLine => "FollowLine",
+            Self::Demo => "Demo",
+            Self::Health => "Health",
+        }
+    }
 }
 
-/// Result of a [`Command::FindEdge`] call
-#[derive(Debug, Clone, Copy)]
-pub enum FindEdgeResult {
-    Success,
-    AlreadyEdging,
-    Follow,
-    Calibrate,
-    NoCalibration,
+/// Reasons for a [`Command`] being denied
+#[derive(Debug)]
+pub enum CommandDenied {
+    Busy(Command),
+    Required(Command),
 }
 
-/// Result of a [`Command::Calibrate`] call
-#[derive(Debug, Clone, Copy)]
-pub enum CalibrateResult {
-    Success,
-    AlreadyCalibrating,
-    FindingEdge,
-    Following,
-}
-
-/// Result of a [`Command::Stop`] call, these represent which action was stopped
-#[derive(Debug, Clone, Copy)]
-pub enum StopResult {
-    Nothing,
-    FollowLine,
-    FindEdge,
-    Calibrate,
-}
-
-/// Result of a [`Command::FollowLine`] call
-///
-/// Success and different failure reasons are represented
-#[derive(Debug, Clone, Copy)]
-pub enum FollowLineResult {
-    Success,
-    AlreadyFollowing,
-    NoCalibration,
-    FindingEdge,
-    MidCalibration,
-    NotOnTheLine,
-}
-
+// TODO: Make handler generic over hardware
 /// Process hardware requests syncronously
 fn handle_commands(
     mut hardware: Hardware,
-    mut channel: mpsc::Receiver<Command>,
+    mut channel: mpsc::Receiver<Request>,
 ) -> Result<(), Box<dyn core::error::Error>> {
     // Store the current calibration status
     let mut left_calibration: Option<SensorCalibration> = None;
@@ -93,14 +79,14 @@ fn handle_commands(
     // Store the state whether logbot is currently on the line or not
     let mut on_line = false;
 
-    'outer: while let Some(command) = channel.blocking_recv() {
+    'outer: while let Some((command, response)) = channel.blocking_recv() {
         match command {
-            Command::Health(response) => {
-                let _ = response.send(());
+            Command::Health => {
+                let _ = response.send(Ok(Command::Health));
             }
-            Command::Demo(response) => {
+            Command::Demo => {
                 // Run the full demo, not responding to any incoming hardware commands
-                let _ = response.send(DemoResult::Success);
+                let _ = response.send(Ok(Command::Stop));
                 demo(
                     &mut hardware.vehicle,
                     &mut hardware.sensors,
@@ -109,9 +95,9 @@ fn handle_commands(
                 on_line = false;
                 continue 'outer;
             }
-            Command::FollowLine(response) => {
+            Command::FollowLine => {
                 if !on_line {
-                    let _ = response.send(FollowLineResult::NotOnTheLine);
+                    let _ = response.send(Err(CommandDenied::Required(Command::FindEdge)));
                     continue 'outer;
                 };
 
@@ -119,12 +105,12 @@ fn handle_commands(
                 let calibration = match left_calibration {
                     Some(calibration) => {
                         // Line following can proceed
-                        let _ = response.send(FollowLineResult::Success);
+                        let _ = response.send(Ok(Command::Stop));
                         calibration
                     }
                     None => {
                         // Fail, since no calibration data is available
-                        let _ = response.send(FollowLineResult::NoCalibration);
+                        let _ = response.send(Err(CommandDenied::Required(Command::Calibrate)));
                         continue 'outer;
                     }
                 };
@@ -148,38 +134,21 @@ fn handle_commands(
                 // Lets start following the line while listening to new commands
                 loop {
                     // We want to handle each command differently
-                    if let Ok(command) = channel.try_recv() {
+                    if let Ok((command, response)) = channel.try_recv() {
                         match command {
-                            Command::Health(response) => {
-                                let _ = response.send(());
+                            Command::Health => {
+                                let _ = response.send(Ok(Command::Health));
                             }
-                            Command::Demo(response) => {
-                                // Run the full demo, not responding to any incoming hardware commands
-                                let _ = response.send(DemoResult::Success);
-                                demo(
-                                    &mut hardware.vehicle,
-                                    &mut hardware.sensors,
-                                    &mut hardware.lift,
-                                )?;
-                                on_line = false;
-                                continue 'outer;
-                            }
-                            Command::FollowLine(response) => {
-                                // We are already following the line
-                                let _ = response.send(FollowLineResult::AlreadyFollowing);
-                            }
-                            Command::Calibrate(response) => {
-                                // Calibrate command should not overwrite following line command
-                                let _ = response.send(CalibrateResult::Following);
-                            }
-                            Command::FindEdge(response) => {
-                                let _ = response.send(FindEdgeResult::Follow);
-                            }
-                            Command::Stop(response) => {
+
+                            Command::Stop => {
                                 // Stop the vehicle and break out the following loop
                                 hardware.vehicle.stop()?;
-                                let _ = response.send(StopResult::FollowLine);
+                                let _ = response.send(Ok(Command::FollowLine));
                                 continue 'outer;
+                            }
+                            _ => {
+                                let _ =
+                                    response.send(Err(CommandDenied::Busy(Command::FollowLine)));
                             }
                         };
                     };
@@ -191,11 +160,11 @@ fn handle_commands(
                     hardware.vehicle.drive(direction)?;
                 }
             }
-            Command::Calibrate(response) => {
+            Command::Calibrate => {
                 on_line = false;
 
                 // Respond with successful oscillation
-                let _ = response.send(CalibrateResult::Success);
+                let _ = response.send(Ok(Command::Stop));
 
                 // Oscillation configuration
                 let oscillate = Oscillate::new(
@@ -219,37 +188,19 @@ fn handle_commands(
                 // Do active waiting since we don't want to block incoming stop messages
                 while !oscillate.should_step() {
                     // Check for incoming messages
-                    if let Ok(command) = channel.try_recv() {
+                    if let Ok((command, response)) = channel.try_recv() {
                         match command {
-                            Command::Health(response) => {
-                                let _ = response.send(());
+                            Command::Health => {
+                                let _ = response.send(Ok(Command::Health));
                             }
-                            Command::Demo(response) => {
-                                // Run the full demo, not responding to any incoming hardware commands
-                                let _ = response.send(DemoResult::Success);
-                                demo(
-                                    &mut hardware.vehicle,
-                                    &mut hardware.sensors,
-                                    &mut hardware.lift,
-                                )?;
-                                on_line = false;
-                                continue 'outer;
-                            }
-                            Command::FollowLine(response) => {
-                                // Follow line not available during calibration
-                                let _ = response.send(FollowLineResult::MidCalibration);
-                            }
-                            Command::Calibrate(response) => {
-                                let _ = response.send(CalibrateResult::AlreadyCalibrating);
-                            }
-                            Command::FindEdge(response) => {
-                                let _ = response.send(FindEdgeResult::Calibrate);
-                            }
-                            Command::Stop(response) => {
+                            Command::Stop => {
                                 // Stop the vehicle and stop oscillation
                                 hardware.vehicle.stop()?;
-                                let _ = response.send(StopResult::Calibrate);
+                                let _ = response.send(Ok(Command::Calibrate));
                                 continue 'outer;
+                            }
+                            _ => {
+                                let _ = response.send(Err(CommandDenied::Busy(Command::Calibrate)));
                             }
                         }
                     }
@@ -260,37 +211,19 @@ fn handle_commands(
                 // Read sensor values continuously until we're supposed to oscillate again
                 while !oscillate.should_step() {
                     // Check for incoming messages
-                    if let Ok(command) = channel.try_recv() {
+                    if let Ok((command, response)) = channel.try_recv() {
                         match command {
-                            Command::Health(response) => {
-                                let _ = response.send(());
+                            Command::Health => {
+                                let _ = response.send(Ok(Command::Health));
                             }
-                            Command::Demo(response) => {
-                                // Run the full demo, not responding to any incoming hardware commands
-                                let _ = response.send(DemoResult::Success);
-                                demo(
-                                    &mut hardware.vehicle,
-                                    &mut hardware.sensors,
-                                    &mut hardware.lift,
-                                )?;
-                                on_line = false;
-                                continue 'outer;
-                            }
-                            Command::FollowLine(response) => {
-                                // Follow line not available during calibration
-                                let _ = response.send(FollowLineResult::MidCalibration);
-                            }
-                            Command::Calibrate(response) => {
-                                let _ = response.send(CalibrateResult::AlreadyCalibrating);
-                            }
-                            Command::FindEdge(response) => {
-                                let _ = response.send(FindEdgeResult::Calibrate);
-                            }
-                            Command::Stop(response) => {
+                            Command::Stop => {
                                 // Stop the vehicle and stop oscillation
                                 hardware.vehicle.stop()?;
-                                let _ = response.send(StopResult::Calibrate);
+                                let _ = response.send(Ok(Command::Calibrate));
                                 continue 'outer;
+                            }
+                            _ => {
+                                let _ = response.send(Err(CommandDenied::Busy(Command::Calibrate)));
                             }
                         }
                     }
@@ -310,16 +243,16 @@ fn handle_commands(
                 left_calibration = Some(left_sensor.calibrate());
                 _right_calibration = Some(right_sensor.calibrate());
             }
-            Command::FindEdge(response) => {
+            Command::FindEdge => {
                 let calibration = match left_calibration {
                     Some(calibration) => calibration,
                     None => {
-                        let _ = response.send(FindEdgeResult::NoCalibration);
+                        let _ = response.send(Err(CommandDenied::Required(Command::Calibrate)));
                         continue 'outer;
                     }
                 };
 
-                let _ = response.send(FindEdgeResult::Success);
+                let _ = response.send(Ok(Command::Stop));
 
                 // Oscillation configuration
                 let mut oscillate = Oscillate::new(
@@ -332,36 +265,21 @@ fn handle_commands(
                 'edge: loop {
                     while !oscillate.should_step() {
                         // Check for incoming messages
-                        if let Ok(command) = channel.try_recv() {
+                        if let Ok((command, response)) = channel.try_recv() {
                             match command {
-                                Command::Health(response) => {
-                                    let _ = response.send(());
+                                Command::Health => {
+                                    let _ = response.send(Ok(Command::Health));
                                 }
-                                Command::Demo(response) => {
-                                    // Run the full demo, not responding to any incoming hardware commands
-                                    let _ = response.send(DemoResult::Success);
-                                    demo(
-                                        &mut hardware.vehicle,
-                                        &mut hardware.sensors,
-                                        &mut hardware.lift,
-                                    )?;
-                                    on_line = false;
-                                    continue 'outer;
-                                }
-                                Command::FollowLine(response) => {
-                                    let _ = response.send(FollowLineResult::FindingEdge);
-                                }
-                                Command::Calibrate(response) => {
-                                    let _ = response.send(CalibrateResult::FindingEdge);
-                                }
-                                Command::FindEdge(response) => {
-                                    let _ = response.send(FindEdgeResult::AlreadyEdging);
-                                }
-                                Command::Stop(response) => {
+                                Command::Stop => {
                                     // Stop finding edge
                                     hardware.vehicle.stop()?;
-                                    let _ = response.send(StopResult::FindEdge);
+                                    on_line = false;
+                                    let _ = response.send(Ok(Command::FindEdge));
                                     continue 'outer;
+                                }
+                                _ => {
+                                    let _ =
+                                        response.send(Err(CommandDenied::Busy(Command::FindEdge)));
                                 }
                             };
                         };
@@ -377,11 +295,11 @@ fn handle_commands(
                 hardware.vehicle.stop()?;
                 on_line = true;
             }
-            Command::Stop(response) => {
+            Command::Stop => {
                 hardware.vehicle.stop()?;
                 // The logbot is already currently not doing anything
                 // We can simply return with a success value
-                let _ = response.send(StopResult::Nothing);
+                let _ = response.send(Ok(Command::Stop));
             }
         };
     }
@@ -389,7 +307,7 @@ fn handle_commands(
 }
 
 /// Spawn actor thread that proccesses [`Command`] requests for [`Hardware`]
-pub fn spawn_default() -> Result<mpsc::Sender<Command>> {
+pub fn spawn_default() -> Result<mpsc::Sender<Request>> {
     // Initialize hardware using defaults
     let hardware = Hardware::try_default()?;
 

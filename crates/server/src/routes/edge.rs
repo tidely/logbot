@@ -9,7 +9,6 @@ use crate::{hardware::Command, state::LogbotState};
 use super::HardwareResponse;
 
 /// Rest API endpoint for the [Command::FindEdge] command.
-#[axum::debug_handler]
 pub async fn find_edge(
     State(state): State<Arc<LogbotState>>,
 ) -> Result<Json<HardwareResponse>, StatusCode> {
@@ -17,7 +16,7 @@ pub async fn find_edge(
 
     state
         .hardware
-        .send(Command::FindEdge(wx))
+        .send((Command::FindEdge, wx))
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 

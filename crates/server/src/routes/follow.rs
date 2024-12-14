@@ -16,7 +16,7 @@ pub async fn post_follow(
 
     state
         .hardware
-        .send(Command::FollowLine(wx))
+        .send((Command::FollowLine, wx))
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 

@@ -8,7 +8,7 @@ workspace = true
 
 [dependencies]
 anyhow.workspace = true
-axum = { version = "0.7.9", features = ["http2", "macros"] }
+axum = { version = "0.7.9", features = ["http2"] }
 clap.workspace = true
 serde = { version = "1.0.215", features = ["serde_derive"] }
 tokio = { version = "1.42.0", features = ["full"] }

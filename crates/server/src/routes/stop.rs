@@ -16,7 +16,7 @@ pub async fn stop(
 
     state
         .hardware
-        .send(Command::Stop(wx))
+        .send((Command::Stop, wx))
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 

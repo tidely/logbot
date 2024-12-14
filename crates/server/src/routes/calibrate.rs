@@ -9,7 +9,6 @@ use crate::{hardware::Command, state::LogbotState};
 use super::HardwareResponse;
 
 /// Rest API endpoint for the [Command::Calibrate] command.
-#[axum::debug_handler]
 pub async fn calibrate(
     State(state): State<Arc<LogbotState>>,
 ) -> Result<Json<HardwareResponse>, StatusCode> {
@@ -17,7 +16,7 @@ pub async fn calibrate(
 
     state
         .hardware
-        .send(Command::Calibrate(wx))
+        .send((Command::Calibrate, wx))
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 

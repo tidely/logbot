@@ -2,7 +2,7 @@
 use axum::http::StatusCode;
 use serde::Serialize;
 
-use crate::hardware::{CalibrateResult, DemoResult, FindEdgeResult, FollowLineResult, StopResult};
+use crate::hardware::{CommandDenied, CommandResult};
 
 pub mod calibrate;
 pub mod demo;
@@ -15,12 +15,12 @@ pub mod stop;
 #[derive(Serialize)]
 pub struct HardwareResponse {
     status: u16,
-    reason: Option<String>,
+    reason: &'static str,
 }
 
 impl HardwareResponse {
     /// Create a new HardwareResponse
-    fn new(status: StatusCode, reason: Option<String>) -> Self {
+    fn new(status: StatusCode, reason: &'static str) -> Self {
         Self {
             status: status.as_u16(),
             reason,
@@ -28,76 +28,14 @@ impl HardwareResponse {
     }
 }
 
-impl From<CalibrateResult> for HardwareResponse {
-    fn from(value: CalibrateResult) -> Self {
+impl From<CommandResult> for HardwareResponse {
+    fn from(value: CommandResult) -> Self {
         match value {
-            CalibrateResult::Success => Self::new(StatusCode::OK, None),
-            CalibrateResult::AlreadyCalibrating => Self::new(StatusCode::FOUND, None),
-            CalibrateResult::FindingEdge => {
-                Self::new(StatusCode::CONFLICT, Some("EDGE".to_string()))
+            Ok(command) => Self::new(StatusCode::OK, command.as_str()),
+            Err(CommandDenied::Busy(busy)) => Self::new(StatusCode::CONFLICT, busy.as_str()),
+            Err(CommandDenied::Required(required)) => {
+                Self::new(StatusCode::FORBIDDEN, required.as_str())
             }
-            CalibrateResult::Following => {
-                Self::new(StatusCode::CONFLICT, Some("FOLLOWING".to_string()))
-            }
-        }
-    }
-}
-
-impl From<StopResult> for HardwareResponse {
-    fn from(value: StopResult) -> Self {
-        match value {
-            StopResult::Nothing => Self::new(StatusCode::OK, None),
-            StopResult::Calibrate => Self::new(StatusCode::OK, Some("CALIBRATE".to_string())),
-            StopResult::FindEdge => Self::new(StatusCode::OK, Some("EDGE".to_string())),
-            StopResult::FollowLine => Self::new(StatusCode::OK, Some("FOLLOW".to_string())),
-        }
-    }
-}
-
-impl From<FollowLineResult> for HardwareResponse {
-    fn from(value: FollowLineResult) -> Self {
-        match value {
-            FollowLineResult::Success => Self::new(StatusCode::OK, None),
-            FollowLineResult::AlreadyFollowing => Self::new(StatusCode::FOUND, None),
-            FollowLineResult::NotOnTheLine => Self::new(
-                StatusCode::METHOD_NOT_ALLOWED,
-                Some("NOTONLINE".to_string()),
-            ),
-            FollowLineResult::FindingEdge => {
-                Self::new(StatusCode::CONFLICT, Some("EDGE".to_string()))
-            }
-            FollowLineResult::MidCalibration => {
-                Self::new(StatusCode::CONFLICT, Some("CALIBRATE".to_string()))
-            }
-            FollowLineResult::NoCalibration => Self::new(
-                StatusCode::METHOD_NOT_ALLOWED,
-                Some("NOCALIBRATION".to_string()),
-            ),
-        }
-    }
-}
-
-impl From<FindEdgeResult> for HardwareResponse {
-    fn from(value: FindEdgeResult) -> Self {
-        match value {
-            FindEdgeResult::Success => Self::new(StatusCode::OK, None),
-            FindEdgeResult::AlreadyEdging => Self::new(StatusCode::FOUND, None),
-            FindEdgeResult::NoCalibration => Self::new(
-                StatusCode::METHOD_NOT_ALLOWED,
-                Some("NOCALIBRATIONO".to_string()),
-            ),
-            FindEdgeResult::Follow => Self::new(StatusCode::CONFLICT, Some("FOLLOW".to_string())),
-            FindEdgeResult::Calibrate => {
-                Self::new(StatusCode::CONFLICT, Some("CALIBRATE".to_string()))
-            }
-        }
-    }
-}
-
-impl From<DemoResult> for HardwareResponse {
-    fn from(value: DemoResult) -> Self {
-        match value {
-            DemoResult::Success => Self::new(StatusCode::OK, None),
         }
     }
 }

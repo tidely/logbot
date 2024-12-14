@@ -16,7 +16,7 @@ pub async fn demo(
 
     state
         .hardware
-        .send(Command::Demo(wx))
+        .send((Command::Demo, wx))
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
