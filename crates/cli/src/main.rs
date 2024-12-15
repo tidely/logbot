@@ -15,7 +15,7 @@ use crossterm::{
     execute, terminal,
 };
 
-use components::hardware_pwm::DCMotor;
+use components::{hardware_pwm::DCMotor, software_pwm::LiftMotor};
 //use components::software_pwm::DCMotor;
 use calibration::{SensorCalibration, SingleSensorCalibration};
 use components::{Left, Right, SensorController};
@@ -38,6 +38,7 @@ const RIGHT: u8 = 0b1000;
 struct Logbot {
     vehicle: Vehicle<DCMotor<Left>, DCMotor<Right>>,
     sensors: SensorController,
+    lift: LiftMotor,
     calibration: Option<SensorCalibration>,
 }
 
@@ -213,6 +214,7 @@ fn cli(logbot: &mut Logbot) -> Result<()> {
 
     let mut state: u8 = 0b0000;
     let speed = Speed::new_clamp(0.1);
+    let lift_speed = Speed::HALF;
 
     // Read keyboard events
     loop {
@@ -259,12 +261,22 @@ fn cli(logbot: &mut Logbot) -> Result<()> {
                     KeyCode::Esc => {
                         break;
                     }
-                    KeyCode::Up => {
-                        // TODO: Implement Lift Motor Up
+                    // Moving the lift is a blocking operation, this means any
+                    // current movement could not be cancelled during the lift operation
+                    //
+                    // To prevent collisions we should only allow lift movement when
+                    // logbot is stationary
+                    KeyCode::Up if state == 0 => {
+                        logbot.lift.up(lift_speed)?;
                         continue;
                     }
-                    KeyCode::Down => {
-                        // TODO: Implement Lift Motor Down
+                    // Moving the lift is a blocking operation, this means any
+                    // current movement could not be cancelled during the lift operation
+                    //
+                    // To prevent collisions we should only allow lift movement when
+                    // logbot is stationary
+                    KeyCode::Down if state == 0 => {
+                        logbot.lift.down(lift_speed)?;
                         continue;
                     }
                     _ => {}
@@ -285,10 +297,6 @@ fn cli(logbot: &mut Logbot) -> Result<()> {
                             Some(direction) => logbot.vehicle.drive(direction)?,
                             None => logbot.vehicle.stop()?,
                         };
-                    }
-                    KeyCode::Up | KeyCode::Down => {
-                        // TODO: Implement Lift Motor Stop
-                        continue;
                     }
                     _ => {}
                 },
@@ -312,9 +320,12 @@ fn main() -> Result<()> {
     let vehicle = Vehicle::new(left_motor, right_motor);
     let sensors = SensorController::try_default()?;
 
+    let lift = LiftMotor::try_default()?;
+
     let mut logbot = Logbot {
         vehicle,
         sensors,
+        lift,
         calibration: None,
     };
 
