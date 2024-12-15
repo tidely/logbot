@@ -7,6 +7,7 @@ use std::{
 };
 
 use anyhow::Result;
+use clap::Parser;
 use crossterm::{
     event::{
         self, Event, KeyCode, KeyEventKind, KeyboardEnhancementFlags, PopKeyboardEnhancementFlags,
@@ -32,6 +33,14 @@ const FORWARD: u8 = 0b0001;
 const BACKWARD: u8 = 0b0010;
 const LEFT: u8 = 0b0100;
 const RIGHT: u8 = 0b1000;
+
+/// Control logbot using the keyboard
+#[derive(Parser)]
+struct Args {
+    /// [`Speed`] of logbot (from 0 to 100)
+    #[arg(short, long, value_parser = clap::value_parser!(u8).range(0..100), default_value_t = 10)]
+    speed: u8,
+}
 
 /// Logbot - bundle vehicle and sensors into a single struct
 #[derive(Debug)]
@@ -208,12 +217,11 @@ fn follow_line(logbot: &mut Logbot) -> Result<KeyPoll> {
 }
 
 /// The main CLI of the program, terminal raw mode needs to be enabled
-fn cli(logbot: &mut Logbot) -> Result<()> {
+fn cli(logbot: &mut Logbot, speed: Speed) -> Result<()> {
     // Enforce that raw mode is enabled
     anyhow::ensure!(terminal::is_raw_mode_enabled()?);
 
     let mut state: u8 = 0b0000;
-    let speed = Speed::new_clamp(0.1);
     let lift_speed = Speed::HALF;
 
     // Read keyboard events
@@ -312,6 +320,11 @@ fn cli(logbot: &mut Logbot) -> Result<()> {
 
 /// Entrypoint for the `cli` binary
 fn main() -> Result<()> {
+    let args = Args::parse();
+
+    // Get the logbot speed from args
+    let speed = Speed::new_clamp(args.speed as f64 / 100.0);
+
     let right_motor: DCMotor<Right> = DCMotor::try_default()?;
     let left_motor: DCMotor<Left> = DCMotor::try_default()?;
     // Make sure to sleep through activation period
@@ -336,7 +349,7 @@ fn main() -> Result<()> {
 
     // We run the main code in another function since we still need to disable
     // terminal raw mode even if we encounter an error
-    let result = cli(&mut logbot);
+    let result = cli(&mut logbot, speed);
 
     execute!(stdout, PopKeyboardEnhancementFlags)?;
     terminal::disable_raw_mode()?;
