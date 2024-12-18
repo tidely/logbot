@@ -6,7 +6,7 @@ use tokio::sync::oneshot;
 
 use crate::{hardware::Command, routes::HardwareResponse, state::LogbotState};
 
-/// Rest API endpoint for the [Command::FollowLine] command.
+/// Rest API endpoint for the [Command::Health] command.
 pub async fn health(
     State(state): State<Arc<LogbotState>>,
 ) -> Result<Json<HardwareResponse>, StatusCode> {
