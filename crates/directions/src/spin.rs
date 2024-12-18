@@ -1,8 +1,8 @@
 use std::ops::{Mul, Not};
 
-use speed::{Speed, SpeedControl};
+use speed::Speed;
 
-use crate::Stop;
+use crate::{SpeedControl, Stop};
 
 /// Directions in which a Vehicle can spin in-place
 #[derive(Debug, Clone, Copy, PartialEq)]

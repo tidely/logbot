@@ -1,8 +1,8 @@
 use std::ops::{Mul, Not};
 
-use speed::{Speed, SpeedControl};
+use speed::Speed;
 
-use crate::Stop;
+use crate::{SpeedControl, Stop};
 
 /// Directions in which a Motor can move
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -89,9 +89,9 @@ impl Not for MotorDirection {
 mod tests {
     use std::ops::Not;
 
-    use speed::{Speed, SpeedControl};
+    use speed::Speed;
 
-    use crate::MotorDirection;
+    use crate::{MotorDirection, SpeedControl};
 
     /// Verify that the .speed() function returns the correct speed
     #[test]

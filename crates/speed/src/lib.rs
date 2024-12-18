@@ -6,15 +6,6 @@
 use core::num::NonZero;
 use core::ops::{Div, Mul};
 
-/// Trait for allowing types to change their [`Speed`]
-pub trait SpeedControl {
-    /// Get the ascossiated [`Speed`] of the type
-    fn speed(&self) -> Speed;
-
-    /// Change the ascossiated [`Speed`] of the type by consuming Self
-    fn with_speed(self, speed: Speed) -> Self;
-}
-
 /// Represent Speed
 ///
 /// [`Speed`] is a simple wrapper around the [`f64`] type.

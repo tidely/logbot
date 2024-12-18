@@ -1,7 +1,7 @@
 use std::ops::Mul;
 
-use crate::{MotorDirection, SpinDirection, Stop};
-use speed::{Speed, SpeedControl};
+use crate::{MotorDirection, SpeedControl, SpinDirection, Stop};
+use speed::Speed;
 
 /// Represents directions a vehicle can take
 #[derive(Debug, Clone, Copy, PartialEq)]
