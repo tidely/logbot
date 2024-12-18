@@ -12,5 +12,6 @@ workspace = true
 [dependencies]
 consts.workspace = true
 components.workspace = true
+interfaces.workspace = true
 vehicle.workspace = true
 rppal.workspace = true

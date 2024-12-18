@@ -12,6 +12,7 @@ use consts::{
     pins::{self, LEFT_MOTOR_POWER, RIGHT_MOTOR_POWER},
     FREQUENCY, I2C_SENSOR_ADDRESS,
 };
+use interfaces::Drive;
 use rppal::pwm::Channel;
 use rppal::pwm::{self, Pwm};
 use rppal::{
@@ -19,6 +20,7 @@ use rppal::{
     i2c::{self, I2c},
 };
 use vehicle::Vehicle;
+use vehicle::VehicleError;
 
 /// The hardware PWM Channel for the left Motor
 const LEFT_MOTOR_CHANNEL: Channel = Channel::Pwm0;
@@ -94,17 +96,6 @@ impl TryDefault for software_pwm::DCMotor<Right> {
     }
 }
 
-impl TryDefault for Vehicle<software_pwm::DCMotor<Left>, software_pwm::DCMotor<Right>> {
-    type Error = gpio::Error;
-
-    fn try_default() -> Result<Self, Self::Error> {
-        Ok(Vehicle::new(
-            software_pwm::DCMotor::try_default()?,
-            software_pwm::DCMotor::try_default()?,
-        ))
-    }
-}
-
 impl TryDefault for SensorController {
     type Error = i2c::Error;
 
@@ -145,14 +136,17 @@ impl TryDefault for hardware_pwm::DCMotor<Right> {
     }
 }
 
-impl TryDefault for Vehicle<hardware_pwm::DCMotor<Left>, hardware_pwm::DCMotor<Right>> {
-    type Error = pwm::Error;
+impl<LM, RM> TryDefault for Vehicle<LM, RM>
+where
+    LM: Drive + TryDefault,
+    RM: Drive + TryDefault,
+{
+    type Error = VehicleError<<LM as TryDefault>::Error, <RM as TryDefault>::Error>;
 
     fn try_default() -> Result<Self, Self::Error> {
-        Ok(Vehicle::new(
-            hardware_pwm::DCMotor::try_default()?,
-            hardware_pwm::DCMotor::try_default()?,
-        ))
+        let left = LM::try_default().map_err(|e| VehicleError::Left(e))?;
+        let right = RM::try_default().map_err(|e| VehicleError::Right(e))?;
+        Ok(Vehicle::new(left, right))
     }
 }
 
