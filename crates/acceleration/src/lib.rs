@@ -8,6 +8,9 @@ use speed::Speed;
 mod linear;
 pub use linear::LinearAcceleration;
 
+mod sineinout;
+pub use sineinout::SineInOutAcceleration;
+
 /// Trait for defining a [`Accelerator`]
 pub trait Accelerator<S>
 where
