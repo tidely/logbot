@@ -1,4 +1,4 @@
-//! Vehicle abstraction for a two wheeled vehicle
+//! Abstraction for a two wheeled [`Vehicle`]
 
 use directions::{MotorDirection, SpinDirection, VehicleDirection};
 use interfaces::{Drive, Spin};
@@ -38,17 +38,17 @@ where
     ) -> Result<Option<Self::Direction>, Self::Error> {
         self.left
             .drive(direction.left)
-            .map_err(|e| VehicleError::Left(e))?;
+            .map_err(VehicleError::Left)?;
         self.right
             .drive(direction.right)
-            .map_err(|e| VehicleError::Right(e))?;
+            .map_err(VehicleError::Right)?;
         Ok(self.state.replace(direction))
     }
 
     /// Stop the [`Vehicle`] by stopping the underlying driveables
     fn stop(&mut self) -> Result<Option<Self::Direction>, Self::Error> {
-        self.left.stop().map_err(|e| VehicleError::Left(e))?;
-        self.right.stop().map_err(|e| VehicleError::Right(e))?;
+        self.left.stop().map_err(VehicleError::Left)?;
+        self.right.stop().map_err(VehicleError::Right)?;
         Ok(self.state.take())
     }
 }

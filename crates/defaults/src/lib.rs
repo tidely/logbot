@@ -138,8 +138,8 @@ where
     type Error = VehicleError<<LM as TryDefault>::Error, <RM as TryDefault>::Error>;
 
     fn try_default() -> Result<Self, Self::Error> {
-        let left = LM::try_default().map_err(|e| VehicleError::Left(e))?;
-        let right = RM::try_default().map_err(|e| VehicleError::Right(e))?;
+        let left = LM::try_default().map_err(VehicleError::Left)?;
+        let right = RM::try_default().map_err(VehicleError::Right)?;
         Ok(Self::new(left, right))
     }
 }
