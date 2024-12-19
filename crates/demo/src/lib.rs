@@ -5,7 +5,7 @@
 
 use std::{num::NonZero, time::Duration};
 
-use acceleration::{Accelerate, Acceleration};
+use acceleration::{Accelerate, LinearAcceleration};
 use calibration::{SensorCalibration, SingleSensorCalibration};
 use components::{software_pwm::LiftMotor, SensorController};
 use consts::Sensors;
@@ -123,8 +123,7 @@ where
     // Create a new state from the config
     let mut state = FollowLineState::new(config.clone());
 
-    // Acceleration
-    let mut acceleration = Acceleration::new(Duration::from_secs(2));
+    let mut acceleration = LinearAcceleration::new(Duration::from_secs(2));
 
     let stop_left = left_calibration.line.saturating_sub(1);
     let stop_right = right_calibration.line.saturating_sub(1);

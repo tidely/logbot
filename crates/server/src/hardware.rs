@@ -2,7 +2,7 @@
 
 use std::{num::NonZero, time::Duration};
 
-use acceleration::{Accelerate, Acceleration};
+use acceleration::{Accelerate, LinearAcceleration};
 use anyhow::Result;
 
 use calibration::{SensorCalibration, SingleSensorCalibration};
@@ -115,8 +115,7 @@ fn handle_commands(
                     }
                 };
 
-                // Acceleration
-                let mut acceleration = Acceleration::new(Duration::from_secs(2));
+                let mut acceleration = LinearAcceleration::new(Duration::from_secs(2));
 
                 // Create the config for following the line
                 let config = FollowLineConfig {
