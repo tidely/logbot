@@ -40,13 +40,12 @@ impl TryDefault for software_pwm::SignedMotor<Left> {
     type Error = gpio::Error;
 
     fn try_default() -> Result<Self, Self::Error> {
-        Ok(Self::new(
-            Gpio::new()?.get(pins::LEFT_MOTOR_POWER)?.into_output_low(),
-            FREQUENCY,
-            Gpio::new()?
-                .get(pins::LEFT_MOTOR_DIRECTION)?
-                .into_output_low(),
-        ))
+        let power = Gpio::new()?.get(pins::LEFT_MOTOR_POWER)?.into_output_low();
+        let direction = Gpio::new()?
+            .get(pins::LEFT_MOTOR_DIRECTION)?
+            .into_output_low();
+        let motor = Self::new(power, FREQUENCY, direction);
+        Ok(motor)
     }
 }
 
@@ -54,13 +53,12 @@ impl TryDefault for software_pwm::SignedMotor<Right> {
     type Error = gpio::Error;
 
     fn try_default() -> Result<Self, Self::Error> {
-        Ok(Self::new(
-            Gpio::new()?.get(pins::RIGHT_MOTOR_POWER)?.into_output_low(),
-            FREQUENCY,
-            Gpio::new()?
-                .get(pins::RIGHT_MOTOR_DIRECTION)?
-                .into_output_low(),
-        ))
+        let power = Gpio::new()?.get(pins::RIGHT_MOTOR_POWER)?.into_output_low();
+        let direction = Gpio::new()?
+            .get(pins::RIGHT_MOTOR_DIRECTION)?
+            .into_output_low();
+        let motor = Self::new(power, FREQUENCY, direction);
+        Ok(motor)
     }
 }
 
@@ -73,10 +71,9 @@ impl TryDefault for software_pwm::DCMotor<Left> {
             stop_pulse_width: Duration::from_micros(1500),
             pulse_width_range: Duration::from_micros(500),
         };
-        Ok(software_pwm::DCMotor::new(
-            Gpio::new()?.get(LEFT_MOTOR_POWER)?.into_output_low(),
-            config,
-        )?)
+        let pin = Gpio::new()?.get(LEFT_MOTOR_POWER)?.into_output_low();
+        let motor = Self::new(pin, config)?;
+        Ok(motor)
     }
 }
 
@@ -89,10 +86,9 @@ impl TryDefault for software_pwm::DCMotor<Right> {
             stop_pulse_width: Duration::from_micros(1468),
             pulse_width_range: Duration::from_micros(500),
         };
-        Ok(software_pwm::DCMotor::new(
-            Gpio::new()?.get(RIGHT_MOTOR_POWER)?.into_output_low(),
-            config,
-        )?)
+        let pin = Gpio::new()?.get(RIGHT_MOTOR_POWER)?.into_output_low();
+        let motor = Self::new(pin, config)?;
+        Ok(motor)
     }
 }
 
@@ -102,7 +98,7 @@ impl TryDefault for SensorController {
     fn try_default() -> Result<Self, Self::Error> {
         let mut i2c = I2c::new()?;
         i2c.set_slave_address(I2C_SENSOR_ADDRESS)?;
-        Ok(SensorController::new(i2c))
+        Ok(Self::new(i2c))
     }
 }
 
@@ -116,7 +112,7 @@ impl TryDefault for hardware_pwm::DCMotor<Left> {
             pulse_width_range: Duration::from_micros(500),
         };
         let pwm = Pwm::new(LEFT_MOTOR_CHANNEL)?;
-        let motor = hardware_pwm::DCMotor::new(pwm, config)?;
+        let motor = Self::new(pwm, config)?;
         Ok(motor)
     }
 }
@@ -131,7 +127,7 @@ impl TryDefault for hardware_pwm::DCMotor<Right> {
             pulse_width_range: Duration::from_micros(500),
         };
         let pwm = Pwm::new(RIGHT_MOTOR_CHANNEL)?;
-        let motor = hardware_pwm::DCMotor::new(pwm, config)?;
+        let motor = Self::new(pwm, config)?;
         Ok(motor)
     }
 }
@@ -146,7 +142,7 @@ where
     fn try_default() -> Result<Self, Self::Error> {
         let left = LM::try_default().map_err(|e| VehicleError::Left(e))?;
         let right = RM::try_default().map_err(|e| VehicleError::Right(e))?;
-        Ok(Vehicle::new(left, right))
+        Ok(Self::new(left, right))
     }
 }
 
