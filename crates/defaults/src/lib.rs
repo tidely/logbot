@@ -8,6 +8,7 @@ use components::hardware_pwm;
 use components::software_pwm;
 use components::software_pwm::LiftMotor;
 use components::{Left, PwmConfig, Right, SensorController};
+use consts::pwm::{LEFT_MOTOR_CHANNEL, RIGHT_MOTOR_CHANNEL};
 use consts::{
     pins::{self, LEFT_MOTOR_POWER, RIGHT_MOTOR_POWER},
     FREQUENCY, I2C_SENSOR_ADDRESS,
@@ -21,11 +22,6 @@ use rppal::{
 };
 use vehicle::Vehicle;
 use vehicle::VehicleError;
-
-/// The hardware PWM Channel for the left Motor
-const LEFT_MOTOR_CHANNEL: Channel = Channel::Pwm0;
-/// The hardware PWM Channel for the right Motor
-const RIGHT_MOTOR_CHANNEL: Channel = Channel::Pwm1;
 
 /// Trait for generating fallible [`Default`] implementations
 pub trait TryDefault: Sized {
@@ -111,7 +107,8 @@ impl TryDefault for hardware_pwm::DCMotor<Left> {
             stop_pulse_width: Duration::from_micros(1480),
             pulse_width_range: Duration::from_micros(500),
         };
-        let pwm = Pwm::new(LEFT_MOTOR_CHANNEL)?;
+        let channel = Channel::try_from(LEFT_MOTOR_CHANNEL)?;
+        let pwm = Pwm::new(channel)?;
         let motor = Self::new(pwm, config)?;
         Ok(motor)
     }
@@ -126,7 +123,8 @@ impl TryDefault for hardware_pwm::DCMotor<Right> {
             stop_pulse_width: Duration::from_micros(1465),
             pulse_width_range: Duration::from_micros(500),
         };
-        let pwm = Pwm::new(RIGHT_MOTOR_CHANNEL)?;
+        let channel = Channel::try_from(RIGHT_MOTOR_CHANNEL)?;
+        let pwm = Pwm::new(channel)?;
         let motor = Self::new(pwm, config)?;
         Ok(motor)
     }

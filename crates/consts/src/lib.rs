@@ -31,6 +31,14 @@ pub mod pins {
     pub const LIFT_DOWN: u8 = 22;
 }
 
+/// Hardware PWM Channel definitions
+pub mod pwm {
+    /// Hardware PWM Channel for Left Motor
+    pub const LEFT_MOTOR_CHANNEL: u8 = 0;
+    /// Hardware PWM Channel for Right Motor
+    pub const RIGHT_MOTOR_CHANNEL: u8 = 1;
+}
+
 /// An enum of all available sensors
 ///
 /// Lists all available sensors as an enum. [`Sensors`] implements
