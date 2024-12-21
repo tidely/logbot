@@ -35,14 +35,10 @@ pub type Request = (Command, oneshot::Sender<CommandResult>);
 /// Command that contains a channel to send a response into
 #[derive(Debug)]
 pub enum Command {
-    /// Health check
-    Health,
     FollowLine,
     Calibrate,
     FindEdge,
     Stop,
-    // Runs the full demo, also prevents health checks from going through
-    // conveniently turning off the control buttons
     Demo,
 }
 
@@ -54,7 +50,6 @@ impl Command {
             Self::FindEdge => "FindEdge",
             Self::FollowLine => "FollowLine",
             Self::Demo => "Demo",
-            Self::Health => "Health",
         }
     }
 }
@@ -81,9 +76,6 @@ fn handle_commands(
 
     'outer: while let Some((command, response)) = channel.blocking_recv() {
         match command {
-            Command::Health => {
-                let _ = response.send(Ok(Command::Health));
-            }
             Command::Demo => {
                 // Run the full demo, not responding to any incoming hardware commands
                 let _ = response.send(Ok(Command::Stop));
@@ -135,10 +127,6 @@ fn handle_commands(
                     // We want to handle each command differently
                     if let Ok((command, response)) = channel.try_recv() {
                         match command {
-                            Command::Health => {
-                                let _ = response.send(Ok(Command::Health));
-                            }
-
                             Command::Stop => {
                                 // Stop the vehicle and break out the following loop
                                 hardware.vehicle.stop()?;
@@ -189,9 +177,6 @@ fn handle_commands(
                     // Check for incoming messages
                     if let Ok((command, response)) = channel.try_recv() {
                         match command {
-                            Command::Health => {
-                                let _ = response.send(Ok(Command::Health));
-                            }
                             Command::Stop => {
                                 // Stop the vehicle and stop oscillation
                                 hardware.vehicle.stop()?;
@@ -212,9 +197,6 @@ fn handle_commands(
                     // Check for incoming messages
                     if let Ok((command, response)) = channel.try_recv() {
                         match command {
-                            Command::Health => {
-                                let _ = response.send(Ok(Command::Health));
-                            }
                             Command::Stop => {
                                 // Stop the vehicle and stop oscillation
                                 hardware.vehicle.stop()?;
@@ -266,9 +248,6 @@ fn handle_commands(
                         // Check for incoming messages
                         if let Ok((command, response)) = channel.try_recv() {
                             match command {
-                                Command::Health => {
-                                    let _ = response.send(Ok(Command::Health));
-                                }
                                 Command::Stop => {
                                     // Stop finding edge
                                     hardware.vehicle.stop()?;
