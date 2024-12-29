@@ -8,15 +8,7 @@ use axum::{
     Router,
 };
 use clap::Parser;
-use routes::{
-    calibrate::calibrate,
-    demo::demo,
-    edge::find_edge,
-    follow::post_follow,
-    health::health,
-    lift::{lift_down, lift_up},
-    stop::stop,
-};
+use routes::{calibrate, demo, find_edge, follow, health, lift_down, lift_up, stop};
 use state::LogbotState;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
@@ -58,7 +50,7 @@ async fn main() -> Result<()> {
         .route("/v1/stop", post(stop))
         .route("/v1/demo", post(demo))
         .route("/v1/calibrate", post(calibrate))
-        .route("/v1/follow", post(post_follow))
+        .route("/v1/follow", post(follow))
         .route("/v1/edge", post(find_edge))
         .route("/v1/lift/up", post(lift_up))
         .route("/v1/lift/down", post(lift_down))
