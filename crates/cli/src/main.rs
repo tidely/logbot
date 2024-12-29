@@ -23,7 +23,7 @@ use components::{Left, Right, SensorController};
 use consts::Sensors;
 use defaults::TryDefault;
 use directions::{MotorDirection, SpinDirection, VehicleDirection};
-use interfaces::{Drive, SensorRead, Spin};
+use interfaces::{Drive, Lift, SensorRead, Spin};
 use line::{FollowLineConfig, FollowLineState};
 use oscillate::Oscillate;
 use speed::Speed;

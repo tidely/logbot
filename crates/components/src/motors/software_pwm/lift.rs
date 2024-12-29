@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use interfaces::Lift;
 use rppal::gpio::{self, InputPin, OutputPin};
 use speed::Speed;
 
@@ -37,11 +38,15 @@ impl LiftMotor {
             down,
         }
     }
+}
+
+impl Lift for LiftMotor {
+    type Error = gpio::Error;
 
     /// Move the [`LiftMotor`] to its up position
     ///
     /// This is a blocking operation
-    pub fn up(&mut self, speed: Speed) -> gpio::Result<()> {
+    fn up(&mut self, speed: Speed) -> Result<(), Self::Error> {
         // Set the direction
         self.direction.set_low();
 
@@ -62,7 +67,7 @@ impl LiftMotor {
     /// Move the [`LiftMotor`] to its down position
     ///
     /// This is a blocking operation
-    pub fn down(&mut self, speed: Speed) -> gpio::Result<()> {
+    fn down(&mut self, speed: Speed) -> Result<(), Self::Error> {
         // Set the direction
         self.direction.set_high();
 
@@ -80,13 +85,11 @@ impl LiftMotor {
         Ok(())
     }
 
-    /// Check whether the lift is in the up position
-    pub fn is_up(&mut self) -> bool {
+    fn is_up(&self) -> bool {
         self.up.is_low()
     }
 
-    /// Check if the lift is in the down position
-    pub fn is_down(&mut self) -> bool {
+    fn is_down(&self) -> bool {
         self.down.is_low()
     }
 }

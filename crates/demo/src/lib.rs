@@ -10,7 +10,7 @@ use calibration::{SensorCalibration, SingleSensorCalibration};
 use components::{software_pwm::LiftMotor, SensorController};
 use consts::Sensors;
 use directions::{SpinDirection, VehicleDirection};
-use interfaces::{SensorRead, Spin};
+use interfaces::{Lift, SensorRead, Spin};
 use line::{FollowLineConfig, FollowLineState};
 use oscillate::Oscillate;
 use speed::Speed;

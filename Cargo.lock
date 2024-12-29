@@ -703,6 +703,9 @@ dependencies = [
 [[package]]
 name = "interfaces"
 version = "0.1.0"
+dependencies = [
+ "speed",
+]
 
 [[package]]
 name = "is_terminal_polyfill"

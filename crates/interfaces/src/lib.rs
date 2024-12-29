@@ -2,6 +2,8 @@
 
 use std::ops::Not;
 
+use speed::Speed;
+
 /// Trait that defines a component as driveable
 /// Provides a drive and a stop method
 pub trait Drive {
@@ -28,6 +30,25 @@ pub trait Spin: Drive {
         &mut self,
         direction: Self::SpinDirection,
     ) -> Result<Option<Self::Direction>, Self::Error>;
+}
+
+/// Trait for defining a Lift that moves up or down
+///
+/// The Lift should have a way of reading it's current position to prevent the
+/// lift from going out of bounds.
+pub trait Lift {
+    /// Error type
+    type Error;
+
+    /// Move the Lift up
+    fn up(&mut self, speed: Speed) -> Result<(), Self::Error>;
+    /// Move the Lift down
+    fn down(&mut self, speed: Speed) -> Result<(), Self::Error>;
+
+    /// Whether the Lift is in the up position
+    fn is_up(&self) -> bool;
+    /// Whether the Lift is in the down position
+    fn is_down(&self) -> bool;
 }
 
 /// Get the Sensor channel for a given sensor
