@@ -32,8 +32,8 @@ pub type CommandResult = Result<Command, CommandDenied>;
 /// [`Request`] execution of a [`Command`] from the [`Hardware`] thread
 pub type Request = (Command, oneshot::Sender<CommandResult>);
 
-/// Command that contains a channel to send a response into
-#[derive(Debug)]
+/// [`Command`]s that control [`Hardware`]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Command {
     FollowLine,
     Calibrate,
@@ -55,7 +55,7 @@ impl Command {
 }
 
 /// Reasons for a [`Command`] being denied
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum CommandDenied {
     Busy(Command),
     Required(Command),
