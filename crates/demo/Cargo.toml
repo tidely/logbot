@@ -16,10 +16,10 @@ oscillate.workspace = true
 calibration.workspace = true
 consts.workspace = true
 speed.workspace = true
-components.workspace = true
 directions.workspace = true
 acceleration.workspace = true
 
 [dev-dependencies]
 defaults.workspace = true
 vehicle.workspace = true
+components.workspace = true

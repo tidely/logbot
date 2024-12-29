@@ -7,22 +7,28 @@ use std::{num::NonZero, time::Duration};
 
 use acceleration::{Accelerate, LinearAcceleration};
 use calibration::{SensorCalibration, SingleSensorCalibration};
-use components::{software_pwm::LiftMotor, SensorController};
 use consts::Sensors;
 use directions::{SpinDirection, VehicleDirection};
+use error::{DemoError, VehicleSensorError};
 use interfaces::{Lift, SensorRead, Spin};
 use line::{FollowLineConfig, FollowLineState};
 use oscillate::Oscillate;
 use speed::Speed;
 
+/// Demo Error types
+pub mod error;
+
 /// Calibrate logbot
-fn calibrate<Vehicle>(
+fn calibrate<Vehicle, SensorReader>(
     vehicle: &mut Vehicle,
-    sensors: &mut SensorController,
-) -> Result<(SensorCalibration, SensorCalibration), Box<dyn core::error::Error>>
+    sensors: &mut SensorReader,
+) -> Result<
+    (SensorCalibration, SensorCalibration),
+    VehicleSensorError<Vehicle::Error, SensorReader::Error>,
+>
 where
     Vehicle: Spin<SpinDirection = SpinDirection>,
-    Vehicle::Error: core::error::Error + 'static,
+    SensorReader: SensorRead<Output = u8>,
 {
     let mut left_calibration = SingleSensorCalibration::default();
     let mut right_calibration = SingleSensorCalibration::default();
@@ -33,75 +39,94 @@ where
         SpinDirection::Left(Speed::new_clamp(0.08)),
         NonZero::<u32>::new(2).unwrap(),
     )
-    .start(vehicle)?;
+    .start(vehicle)
+    .map_err(VehicleSensorError::Vehicle)?;
 
     // Wait for the first change in direction until we start logging values
     oscillate.wait_until_next();
-    oscillate.step(vehicle)?;
+    oscillate
+        .step(vehicle)
+        .map_err(VehicleSensorError::Vehicle)?;
 
     // Read sensor values continuously until we're supposed to oscillate again
     while !oscillate.should_step() {
-        let left_value = sensors.read(Sensors::Left)?;
-        let right_value = sensors.read(Sensors::Left)?;
+        let left_value = sensors
+            .read(Sensors::Left)
+            .map_err(VehicleSensorError::Sensor)?;
+        let right_value = sensors
+            .read(Sensors::Left)
+            .map_err(VehicleSensorError::Sensor)?;
 
         left_calibration.log(left_value as f64);
         right_calibration.log(right_value as f64);
     }
 
-    vehicle.stop()?;
+    vehicle.stop().map_err(VehicleSensorError::Vehicle)?;
 
     // Evaluate sensor readings
     Ok((left_calibration.calibrate(), right_calibration.calibrate()))
 }
 
 /// Find the edge of the line
-fn find_edge<Vehicle>(
+fn find_edge<Vehicle, SensorReader>(
     vehicle: &mut Vehicle,
-    sensors: &mut SensorController,
+    sensors: &mut SensorReader,
     calibration: &SensorCalibration,
     direction: SpinDirection,
-) -> Result<(), Box<dyn core::error::Error>>
+) -> Result<(), VehicleSensorError<Vehicle::Error, SensorReader::Error>>
 where
     Vehicle: Spin<SpinDirection = SpinDirection>,
-    Vehicle::Error: core::error::Error + 'static,
+    SensorReader: SensorRead<Output = u8>,
 {
-    vehicle.spin(direction)?;
+    vehicle
+        .spin(direction)
+        .map_err(VehicleSensorError::Vehicle)?;
 
-    while sensors.read(Sensors::Right)? < calibration.line.saturating_sub(1) {
+    while sensors
+        .read(Sensors::Right)
+        .map_err(VehicleSensorError::Sensor)?
+        < calibration.line.saturating_sub(1)
+    {
         std::thread::sleep(Duration::from_micros(300));
     }
 
     // Stop logbot after edge is found
-    vehicle.stop()?;
+    vehicle.stop().map_err(VehicleSensorError::Vehicle)?;
     Ok(())
 }
 
 /// Spin logbot in-place from the line, until it finds the line again
 ///
 /// Basically means making a 180 degree turn in most cases
-pub fn turn_on_line<Vehicle>(
+pub fn turn_on_line<Vehicle, SensorReader>(
     vehicle: &mut Vehicle,
-    sensors: &mut SensorController,
+    sensors: &mut SensorReader,
     left_calibration: &SensorCalibration,
     direction: SpinDirection,
-) -> Result<(), Box<dyn core::error::Error>>
+) -> Result<(), VehicleSensorError<Vehicle::Error, SensorReader::Error>>
 where
     Vehicle: Spin<SpinDirection = SpinDirection, Direction = VehicleDirection>,
-    Vehicle::Error: core::error::Error + 'static,
+    SensorReader: SensorRead<Output = u8>,
 {
     // Start spinning in a direction
-    vehicle.spin(direction)?;
+    vehicle
+        .spin(direction)
+        .map_err(VehicleSensorError::Vehicle)?;
 
     // Give a little time of get off the line first
     std::thread::sleep(Duration::from_secs(1));
 
     // Wait until we find the line again
-    while sensors.read(Sensors::Left)? < left_calibration.line.saturating_sub(3) {
+    while sensors
+        .read(Sensors::Left)
+        .map_err(VehicleSensorError::Sensor)?
+        < left_calibration.line.saturating_sub(3)
+    {
         std::thread::sleep(Duration::from_micros(300));
     }
 
     // Stop the vehicle once we are back on the line
-    vehicle.stop()?;
+    vehicle.stop().map_err(VehicleSensorError::Vehicle)?;
 
     Ok(())
 }
@@ -109,16 +134,16 @@ where
 /// Follow line until a stop line is detected
 ///
 /// A stop line means that both sensors consider themselves ontop of the line at the same time
-pub fn follow_until_line<Vehicle>(
+pub fn follow_until_line<Vehicle, SensorReader>(
     vehicle: &mut Vehicle,
-    sensors: &mut SensorController,
+    sensors: &mut SensorReader,
     left_calibration: &SensorCalibration,
     right_calibration: &SensorCalibration,
     config: FollowLineConfig,
-) -> Result<(), Box<dyn core::error::Error>>
+) -> Result<(), VehicleSensorError<Vehicle::Error, SensorReader::Error>>
 where
     Vehicle: Spin<SpinDirection = SpinDirection, Direction = VehicleDirection>,
-    Vehicle::Error: core::error::Error + 'static,
+    SensorReader: SensorRead<Output = u8>,
 {
     // Create a new state from the config
     let mut state = FollowLineState::new(config.clone());
@@ -129,8 +154,12 @@ where
     let stop_right = right_calibration.line.saturating_sub(1);
 
     loop {
-        let left_sensor_value = sensors.read(Sensors::Left)?;
-        let right_sensor_value = sensors.read(Sensors::Right)?;
+        let left_sensor_value = sensors
+            .read(Sensors::Left)
+            .map_err(VehicleSensorError::Sensor)?;
+        let right_sensor_value = sensors
+            .read(Sensors::Right)
+            .map_err(VehicleSensorError::Sensor)?;
 
         if left_sensor_value > stop_left && right_sensor_value > stop_right {
             break;
@@ -138,22 +167,25 @@ where
 
         let direction = state.step(left_sensor_value);
         let direction = direction.accelerate(&mut acceleration);
-        vehicle.drive(direction)?;
+        vehicle
+            .drive(direction)
+            .map_err(VehicleSensorError::Vehicle)?;
     }
 
-    vehicle.stop()?;
+    vehicle.stop().map_err(VehicleSensorError::Vehicle)?;
     Ok(())
 }
 
 /// Demo logbot, by following the line and lifting boxes in an pre-arranged setup
-pub fn demo<Vehicle>(
+pub fn demo<Vehicle, SensorReader, LiftMotor>(
     vehicle: &mut Vehicle,
-    sensors: &mut SensorController,
+    sensors: &mut SensorReader,
     lift: &mut LiftMotor,
-) -> Result<(), Box<dyn core::error::Error>>
+) -> Result<(), DemoError<Vehicle::Error, SensorReader::Error, LiftMotor::Error>>
 where
     Vehicle: Spin<SpinDirection = SpinDirection, Direction = VehicleDirection>,
-    Vehicle::Error: core::error::Error + 'static,
+    SensorReader: SensorRead<Output = u8>,
+    LiftMotor: Lift,
 {
     let (left_calibration, right_calibration) = calibrate(vehicle, sensors)?;
 
@@ -185,7 +217,7 @@ where
         config,
     )?;
 
-    lift.up(Speed::HALF)?;
+    lift.up(Speed::HALF).map_err(DemoError::Lift)?;
 
     // Turn the logbot 180 degrees in relation to the line
     turn_on_line(
@@ -214,7 +246,7 @@ where
         config,
     )?;
 
-    lift.down(Speed::HALF)?;
+    lift.down(Speed::HALF).map_err(DemoError::Lift)?;
 
     Ok(())
 }
