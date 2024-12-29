@@ -15,7 +15,10 @@ use interfaces::{Drive, Lift, SensorRead};
 use line::{FollowLineConfig, FollowLineState};
 use oscillate::Oscillate;
 use speed::Speed;
-use tokio::sync::{mpsc, oneshot};
+use tokio::{
+    sync::{mpsc, oneshot},
+    task::JoinHandle,
+};
 use vehicle::Vehicle;
 
 const DEFAULT_SPEED: Speed = unsafe { Speed::new_unchecked(0.1) };
@@ -65,12 +68,45 @@ pub enum CommandDenied {
     Required(Command),
 }
 
+#[derive(Debug)]
+pub struct HardwareThread {
+    channel: mpsc::Sender<Request>,
+    handle: JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>>,
+}
+
+impl HardwareThread {
+    /// Spawn a new [`HardwareThread`] with the given [`Hardware`]
+    pub fn spawn(hardware: Hardware) -> Self {
+        let (wx, rx) = mpsc::channel(10);
+        let handle = tokio::task::spawn_blocking(|| handle_commands(hardware, rx));
+        Self {
+            channel: wx,
+            handle,
+        }
+    }
+
+    /// Send a  [`Command`] to the [`HardwareThread`]
+    ///
+    /// Returns [None](`Option::None`) when the [`HardwareThread`] is no longer running.
+    pub async fn send(&self, command: Command) -> Option<CommandResult> {
+        let (wx, rx) = oneshot::channel();
+        // Both calls are successful when the thread is active
+        self.channel.send((command, wx)).await.ok()?;
+        rx.await.ok()
+    }
+
+    /// Whether the [`HardwareThread`] is finished
+    pub fn is_finished(&self) -> bool {
+        self.handle.is_finished()
+    }
+}
+
 // TODO: Make handler generic over hardware
 /// Process hardware requests syncronously
 fn handle_commands(
     mut hardware: Hardware,
     mut channel: mpsc::Receiver<Request>,
-) -> Result<(), Box<dyn core::error::Error>> {
+) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
     // Store the current calibration status
     let mut left_calibration: Option<SensorCalibration> = None;
     let mut _right_calibration: Option<SensorCalibration> = None;
@@ -302,23 +338,6 @@ fn handle_commands(
         };
     }
     Ok(())
-}
-
-/// Spawn actor thread that proccesses [`Command`] requests for [`Hardware`]
-pub fn spawn_default() -> Result<mpsc::Sender<Request>> {
-    // Initialize hardware using defaults
-    let hardware = Hardware::try_default()?;
-
-    // Channel for sending commands
-    let (wx, rx) = mpsc::channel(10);
-
-    // Start blocking thread to handle commands
-    tokio::task::spawn_blocking(|| {
-        if let Err(e) = handle_commands(hardware, rx) {
-            println!("{}", e);
-        }
-    });
-    Ok(wx)
 }
 
 /// Convenience struct to pass hardware components around

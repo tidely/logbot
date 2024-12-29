@@ -9,7 +9,7 @@ use crate::{routes::HardwareResponse, state::LogbotState};
 pub async fn health(
     State(state): State<Arc<LogbotState>>,
 ) -> Result<Json<HardwareResponse>, StatusCode> {
-    if state.hardware.is_closed() {
+    if state.hardware.is_finished() {
         return Err(StatusCode::INTERNAL_SERVER_ERROR);
     };
 

@@ -1,19 +1,21 @@
 use anyhow::Result;
 
-use tokio::sync::mpsc;
+use defaults::TryDefault;
 
-use crate::hardware::{spawn_default, Request};
+use crate::hardware::{Hardware, HardwareThread};
 
-/// Store api global state
+/// Global state for the Logbot API
 #[derive(Debug)]
 pub struct LogbotState {
-    /// Channel for sending hardware commands
-    pub hardware: mpsc::Sender<Request>,
+    /// Thread for handling [`Hardware`] components
+    pub hardware: HardwareThread,
 }
 
 impl LogbotState {
     pub fn new() -> Result<Self> {
-        let channel = spawn_default()?;
-        Ok(Self { hardware: channel })
+        let hardware = Hardware::try_default()?;
+        let thread = HardwareThread::spawn(hardware);
+
+        Ok(Self { hardware: thread })
     }
 }
