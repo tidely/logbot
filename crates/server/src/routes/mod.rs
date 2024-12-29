@@ -9,6 +9,7 @@ pub mod demo;
 pub mod edge;
 pub mod follow;
 pub mod health;
+pub mod lift;
 pub mod stop;
 
 /// [`Serialize`] hardware responses using serde

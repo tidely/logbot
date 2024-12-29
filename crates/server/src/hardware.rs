@@ -11,7 +11,7 @@ use consts::Sensors;
 use defaults::TryDefault;
 use demo::demo;
 use directions::SpinDirection;
-use interfaces::{Drive, SensorRead};
+use interfaces::{Drive, Lift, SensorRead};
 use line::{FollowLineConfig, FollowLineState};
 use oscillate::Oscillate;
 use speed::Speed;
@@ -38,6 +38,8 @@ pub enum Command {
     FollowLine,
     Calibrate,
     FindEdge,
+    LiftUp,
+    LiftDown,
     Stop,
     Demo,
 }
@@ -46,6 +48,8 @@ impl Command {
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Stop => "Stop",
+            Self::LiftUp => "LiftUp",
+            Self::LiftDown => "LiftDown",
             Self::Calibrate => "Calibrate",
             Self::FindEdge => "FindEdge",
             Self::FollowLine => "FollowLine",
@@ -272,6 +276,22 @@ fn handle_commands(
                 }
                 hardware.vehicle.stop()?;
                 on_line = true;
+            }
+            Command::LiftUp => {
+                // Vehicle should be stopped, since lift is a blocking operating
+                // It should be stopped anyway, but this makes sure it is
+                let _ = hardware.vehicle.stop();
+
+                let _ = response.send(Ok(Command::LiftUp));
+                hardware.lift.up(Speed::HALF)?;
+            }
+            Command::LiftDown => {
+                // Vehicle should be stopped, since lift is a blocking operating
+                // It should be stopped anyway, but this makes sure it is
+                let _ = hardware.vehicle.stop();
+
+                let _ = response.send(Ok(Command::LiftDown));
+                hardware.lift.down(Speed::HALF)?;
             }
             Command::Stop => {
                 hardware.vehicle.stop()?;

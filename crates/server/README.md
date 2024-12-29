@@ -6,13 +6,16 @@ This crates provides a REST-api for controlling and monitoring logbot.
 ## Endpoints
 
 Endpoints with hardware controlling abilities should be called using HTTP POST requests.
+Some endpoints block processing of other requests until they are finished. These endpoints are marked as blocking.
 
 Available endpoints are:
 
-- `/v1/demo`: Demo
+- `/v1/demo`: Demo (blocking)
 - `/v1/calibrate`: Calibrate
 - `/v1/edge`: Find the edge of the line
 - `/v1/follow`: Follow the line
+- `/v1/lift/up`: Move the lift up (blocking)
+- `/v1/lift/down`: Move the lift down (blocking)
 - `/v1/stop`: Stop
 
 There is a Health Check endpoint, which should be called using a HTTP GET request.

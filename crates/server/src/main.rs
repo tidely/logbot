@@ -9,7 +9,12 @@ use axum::{
 };
 use clap::Parser;
 use routes::{
-    calibrate::calibrate, demo::demo, edge::find_edge, follow::post_follow, health::health,
+    calibrate::calibrate,
+    demo::demo,
+    edge::find_edge,
+    follow::post_follow,
+    health::health,
+    lift::{lift_down, lift_up},
     stop::stop,
 };
 use state::LogbotState;
@@ -55,6 +60,8 @@ async fn main() -> Result<()> {
         .route("/v1/calibrate", post(calibrate))
         .route("/v1/follow", post(post_follow))
         .route("/v1/edge", post(find_edge))
+        .route("/v1/lift/up", post(lift_up))
+        .route("/v1/lift/down", post(lift_down))
         .layer(TraceLayer::new_for_http())
         .with_state(state);
 
