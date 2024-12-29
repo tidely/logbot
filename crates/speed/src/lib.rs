@@ -35,6 +35,15 @@ impl Speed {
         Self(value.clamp(0.0, 1.0))
     }
 
+    /// Create a new [`Speed`] with a constant value
+    pub const fn new_const(value: f64) -> Self {
+        if value < 0.0 || value > 1.0 {
+            panic!("Speed is not within bounds");
+        };
+
+        Self(value)
+    }
+
     /// SAFETY: value must be between 0.0 and 1.0 (inclusive)
     pub const unsafe fn new_unchecked(value: f64) -> Self {
         Self(value)

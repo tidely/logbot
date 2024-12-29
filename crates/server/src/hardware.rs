@@ -21,7 +21,7 @@ use tokio::{
 };
 use vehicle::Vehicle;
 
-const DEFAULT_SPEED: Speed = unsafe { Speed::new_unchecked(0.1) };
+const DEFAULT_SPEED: Speed = Speed::new_const(0.1);
 
 /// The [`Result`] of a [`Request`]
 ///
