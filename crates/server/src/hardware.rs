@@ -20,6 +20,7 @@ use tokio::{
 };
 use vehicle::Vehicle;
 
+/// Default [`Speed`] at which the [`HardwareThread`] should operate
 const DEFAULT_SPEED: Speed = Speed::new_const(0.1);
 
 /// The [`Result`] of a [`Request`]
@@ -46,7 +47,14 @@ pub enum Command {
     Demo,
 }
 
+impl ToString for Command {
+    fn to_string(&self) -> String {
+        self.as_str().to_string()
+    }
+}
+
 impl Command {
+    /// Convert the [`Command`] to a string slice
     pub fn as_str(&self) -> &'static str {
         match self {
             Self::Stop => "Stop",
@@ -67,6 +75,7 @@ pub enum CommandDenied {
     Required(Command),
 }
 
+/// Thread for handling hardware operations
 #[derive(Debug)]
 pub struct HardwareThread {
     channel: mpsc::Sender<Request>,
@@ -84,7 +93,7 @@ impl HardwareThread {
         }
     }
 
-    /// Send a  [`Command`] to the [`HardwareThread`]
+    /// Send a [`Command`] to the [`HardwareThread`]
     ///
     /// Returns [None](`Option::None`) when the [`HardwareThread`] is no longer running.
     pub async fn send(&self, command: Command) -> Option<CommandResult> {
