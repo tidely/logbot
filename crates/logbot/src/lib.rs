@@ -5,6 +5,8 @@
 use interfaces::{Drive, Lift, SensorRead, Spin, ToSensorChannel};
 use speed::Speed;
 
+pub mod error;
+
 /// Logbot struct that wraps all hardware components
 #[derive(Debug)]
 pub struct Logbot<V, S, L> {
