@@ -98,7 +98,7 @@ where
 /// Spin logbot in-place from the line, until it finds the line again
 ///
 /// Basically means making a 180 degree turn in most cases
-pub fn turn_on_line<Vehicle, SensorReader>(
+fn turn_on_line<Vehicle, SensorReader>(
     vehicle: &mut Vehicle,
     sensors: &mut SensorReader,
     left_calibration: &SensorCalibration,
@@ -134,7 +134,7 @@ where
 /// Follow line until a stop line is detected
 ///
 /// A stop line means that both sensors consider themselves ontop of the line at the same time
-pub fn follow_until_line<Vehicle, SensorReader>(
+fn follow_until_line<Vehicle, SensorReader>(
     vehicle: &mut Vehicle,
     sensors: &mut SensorReader,
     left_calibration: &SensorCalibration,

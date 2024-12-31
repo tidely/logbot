@@ -2,7 +2,7 @@ use std::fmt::Display;
 
 /// Geneirc Error for interacting with a Vehicle and Sensors at once
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub enum VehicleSensorError<VE, SE> {
+pub(crate) enum VehicleSensorError<VE, SE> {
     /// Vehicle error variant
     Vehicle(VE),
     /// Sensor error variant
