@@ -18,6 +18,7 @@ members = [
     "crates/oscillate",
     "crates/line",
     "crates/acceleration",
+    "crates/logbot",
 
     # Crates with hardcoded implementations
     "crates/components",
@@ -44,6 +45,7 @@ oscillate = { path = "crates/oscillate" }
 calibration = { path = "crates/calibration" }
 line = { path = "crates/line" }
 acceleration = { path = "crates/acceleration" }
+logbot = { path = "crates/logbot" }
 
 # Crates with hardcoded implementations
 consts = { path = "crates/consts" }
