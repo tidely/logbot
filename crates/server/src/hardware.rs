@@ -3,7 +3,6 @@
 use std::{num::NonZero, time::Duration};
 
 use acceleration::{Accelerate, LinearAcceleration};
-use anyhow::Result;
 
 use calibration::{SensorCalibration, SingleSensorCalibration};
 use components::{hardware_pwm::DCMotor, software_pwm::LiftMotor, Left, Right, SensorController};
@@ -30,7 +29,7 @@ const DEFAULT_SPEED: Speed = Speed::new_const(0.1);
 ///
 /// The Err() variant means the command failed. The reason is contained
 /// within the Err.
-pub type CommandResult = Result<Command, CommandDenied>;
+pub type CommandResult = std::result::Result<Command, CommandDenied>;
 
 /// [`Request`] execution of a [`Command`] from the [`Hardware`] thread
 pub type Request = (Command, oneshot::Sender<CommandResult>);
@@ -71,7 +70,7 @@ pub enum CommandDenied {
 #[derive(Debug)]
 pub struct HardwareThread {
     channel: mpsc::Sender<Request>,
-    handle: JoinHandle<Result<(), Box<dyn std::error::Error + Send + Sync + 'static>>>,
+    handle: JoinHandle<anyhow::Result<()>>,
 }
 
 impl HardwareThread {
@@ -106,7 +105,7 @@ impl HardwareThread {
 fn handle_commands(
     mut hardware: Hardware,
     mut channel: mpsc::Receiver<Request>,
-) -> Result<(), Box<dyn std::error::Error + Send + Sync + 'static>> {
+) -> anyhow::Result<()> {
     // Store the current calibration status
     let mut left_calibration: Option<SensorCalibration> = None;
     let mut _right_calibration: Option<SensorCalibration> = None;
