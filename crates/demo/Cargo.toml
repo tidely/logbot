@@ -18,6 +18,7 @@ consts.workspace = true
 speed.workspace = true
 directions.workspace = true
 acceleration.workspace = true
+logbot.workspace = true
 
 [dev-dependencies]
 defaults.workspace = true

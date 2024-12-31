@@ -1,24 +1,22 @@
 //! Actor thread for handling hardware operations
 
-use std::{num::NonZero, time::Duration};
+use std::{fmt::Debug, num::NonZero, time::Duration};
 
 use acceleration::{Accelerate, LinearAcceleration};
 
 use calibration::{SensorCalibration, SingleSensorCalibration};
-use components::{hardware_pwm::DCMotor, software_pwm::LiftMotor, Left, Right, SensorController};
 use consts::Sensors;
-use defaults::TryDefault;
 use demo::demo;
-use directions::SpinDirection;
-use interfaces::{Drive, Lift, SensorRead};
+use directions::{SpinDirection, VehicleDirection};
+use interfaces::{Drive, Lift, SensorRead, Spin};
 use line::{FollowLineConfig, FollowLineState};
+use logbot::error::LogbotError;
 use oscillate::Oscillate;
 use speed::Speed;
 use tokio::{
     sync::{mpsc, oneshot},
     task::JoinHandle,
 };
-use vehicle::Vehicle;
 
 /// Default [`Speed`] at which the [`HardwareThread`] should operate
 const DEFAULT_SPEED: Speed = Speed::new_const(0.1);
@@ -32,10 +30,10 @@ const DEFAULT_SPEED: Speed = Speed::new_const(0.1);
 /// within the Err.
 pub type CommandResult = std::result::Result<Command, CommandDenied>;
 
-/// [`Request`] execution of a [`Command`] from the [`Hardware`] thread
+/// [`Request`] execution of a [`Command`] on the [`HardwareThread`]
 pub type Request = (Command, oneshot::Sender<CommandResult>);
 
-/// [`Command`]s that control [`Hardware`]
+/// [`Command`]s that control hardware
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum Command {
     FollowLine,
@@ -77,16 +75,46 @@ pub enum CommandDenied {
 
 /// Thread for handling hardware operations
 #[derive(Debug)]
-pub struct HardwareThread {
+pub struct HardwareThread<L>
+where
+    L: Send,
+
+    L: Drive<Direction = VehicleDirection>,
+    <L as Drive>::Error: Debug + Send,
+
+    L: Spin<SpinDirection = SpinDirection>,
+
+    L: SensorRead<Output = u8>,
+    <L as SensorRead>::Error: Debug + Send,
+
+    L: Lift,
+    <L as Lift>::Error: Debug + Send,
+{
     channel: mpsc::Sender<Request>,
-    handle: JoinHandle<anyhow::Result<()>>,
+    handle: JoinHandle<
+        Result<(), LogbotError<<L as Drive>::Error, <L as SensorRead>::Error, <L as Lift>::Error>>,
+    >,
 }
 
-impl HardwareThread {
-    /// Spawn a new [`HardwareThread`] with the given [`Hardware`]
-    pub fn spawn(hardware: Hardware) -> Self {
+impl<L> HardwareThread<L>
+where
+    L: Send + 'static,
+
+    L: Drive<Direction = VehicleDirection>,
+    <L as Drive>::Error: Debug + Send,
+
+    L: Spin<SpinDirection = SpinDirection>,
+
+    L: SensorRead<Output = u8>,
+    <L as SensorRead>::Error: Debug + Send,
+
+    L: Lift,
+    <L as Lift>::Error: Debug + Send,
+{
+    /// Spawn a new [`HardwareThread`]
+    pub fn spawn(logbot: L) -> Self {
         let (wx, rx) = mpsc::channel(10);
-        let handle = tokio::task::spawn_blocking(|| handle_commands(hardware, rx));
+        let handle = tokio::task::spawn_blocking(|| handle_commands(logbot, rx));
         Self {
             channel: wx,
             handle,
@@ -109,12 +137,17 @@ impl HardwareThread {
     }
 }
 
-// TODO: Make handler generic over hardware
 /// Process hardware requests syncronously
-fn handle_commands(
-    mut hardware: Hardware,
+fn handle_commands<L>(
+    mut logbot: L,
     mut channel: mpsc::Receiver<Request>,
-) -> anyhow::Result<()> {
+) -> Result<(), LogbotError<<L as Drive>::Error, <L as SensorRead>::Error, <L as Lift>::Error>>
+where
+    L: Drive<Direction = VehicleDirection>,
+    L: Spin<SpinDirection = SpinDirection>,
+    L: SensorRead<Output = u8>,
+    L: Lift,
+{
     // Store the current calibration status
     let mut left_calibration: Option<SensorCalibration> = None;
     let mut _right_calibration: Option<SensorCalibration> = None;
@@ -127,11 +160,7 @@ fn handle_commands(
             Command::Demo => {
                 // Run the full demo, not responding to any incoming hardware commands
                 let _ = response.send(Ok(Command::Stop));
-                demo(
-                    &mut hardware.vehicle,
-                    &mut hardware.sensors,
-                    &mut hardware.lift,
-                )?;
+                demo(&mut logbot)?;
                 on_line = false;
                 continue 'outer;
             }
@@ -177,7 +206,7 @@ fn handle_commands(
                         match command {
                             Command::Stop => {
                                 // Stop the vehicle and break out the following loop
-                                hardware.vehicle.stop()?;
+                                logbot.stop().map_err(LogbotError::Vehicle)?;
                                 let _ = response.send(Ok(Command::FollowLine));
                                 continue 'outer;
                             }
@@ -189,10 +218,10 @@ fn handle_commands(
                     };
 
                     // Move following state forward
-                    let sensor_value = hardware.sensors.read(Sensors::Left)?;
+                    let sensor_value = logbot.read(Sensors::Left).map_err(LogbotError::Sensor)?;
                     let direction = state.step(sensor_value);
                     let direction = direction.accelerate(&mut acceleration);
-                    hardware.vehicle.drive(direction)?;
+                    logbot.drive(direction).map_err(LogbotError::Vehicle)?;
                 }
             }
             Command::Calibrate => {
@@ -215,7 +244,7 @@ fn handle_commands(
 
                 // Oscillate the vehicle starting with one second, doubling the time
                 // on each direction change
-                let mut oscillate = oscillate.start(&mut hardware.vehicle)?;
+                let mut oscillate = oscillate.start(&mut logbot).map_err(LogbotError::Vehicle)?;
 
                 // Wait until we first change direction, since we want to record
                 // one contiguous line with the sensors
@@ -227,7 +256,7 @@ fn handle_commands(
                         match command {
                             Command::Stop => {
                                 // Stop the vehicle and stop oscillation
-                                hardware.vehicle.stop()?;
+                                logbot.stop().map_err(LogbotError::Vehicle)?;
                                 let _ = response.send(Ok(Command::Calibrate));
                                 continue 'outer;
                             }
@@ -238,7 +267,7 @@ fn handle_commands(
                     }
                 }
 
-                oscillate.step(&mut hardware.vehicle)?;
+                oscillate.step(&mut logbot).map_err(LogbotError::Vehicle)?;
 
                 // Read sensor values continuously until we're supposed to oscillate again
                 while !oscillate.should_step() {
@@ -247,7 +276,7 @@ fn handle_commands(
                         match command {
                             Command::Stop => {
                                 // Stop the vehicle and stop oscillation
-                                hardware.vehicle.stop()?;
+                                logbot.stop().map_err(LogbotError::Vehicle)?;
                                 let _ = response.send(Ok(Command::Calibrate));
                                 continue 'outer;
                             }
@@ -258,15 +287,15 @@ fn handle_commands(
                     }
 
                     // Read values from sensors
-                    let left_value = hardware.sensors.read(Sensors::Left)?;
-                    let right_value = hardware.sensors.read(Sensors::Right)?;
+                    let left_value = logbot.read(Sensors::Left).map_err(LogbotError::Sensor)?;
+                    let right_value = logbot.read(Sensors::Right).map_err(LogbotError::Sensor)?;
 
                     left_sensor.log(left_value as f64);
                     right_sensor.log(right_value as f64);
                 }
 
                 // Stop the vehicle once the oscillation is done
-                hardware.vehicle.stop()?;
+                logbot.stop().map_err(LogbotError::Vehicle)?;
 
                 // Evaluate sensor readings to get calibrated sensors
                 left_calibration = Some(left_sensor.calibrate());
@@ -289,7 +318,8 @@ fn handle_commands(
                     SpinDirection::Left(DEFAULT_SPEED),
                     NonZero::<u32>::new(2).unwrap(),
                 )
-                .start(&mut hardware.vehicle)?;
+                .start(&mut logbot)
+                .map_err(LogbotError::Vehicle)?;
 
                 'edge: loop {
                     while !oscillate.should_step() {
@@ -298,7 +328,7 @@ fn handle_commands(
                             match command {
                                 Command::Stop => {
                                     // Stop finding edge
-                                    hardware.vehicle.stop()?;
+                                    logbot.stop().map_err(LogbotError::Vehicle)?;
                                     on_line = false;
                                     let _ = response.send(Ok(Command::FindEdge));
                                     continue 'outer;
@@ -310,35 +340,36 @@ fn handle_commands(
                             };
                         };
                         // Check if we have found the edge
-                        let value = hardware.sensors.read(Sensors::Right)? as f64;
+                        let value =
+                            logbot.read(Sensors::Right).map_err(LogbotError::Sensor)? as f64;
                         if (value - calibration.line as f64).abs() < 2.0 {
                             break 'edge;
                         };
                     }
                     // We should change directions
-                    oscillate.step(&mut hardware.vehicle)?;
+                    oscillate.step(&mut logbot).map_err(LogbotError::Vehicle)?;
                 }
-                hardware.vehicle.stop()?;
+                logbot.stop().map_err(LogbotError::Vehicle)?;
                 on_line = true;
             }
             Command::LiftUp => {
                 // Vehicle should be stopped, since lift is a blocking operating
                 // It should be stopped anyway, but this makes sure it is
-                let _ = hardware.vehicle.stop();
+                let _ = logbot.stop();
 
                 let _ = response.send(Ok(Command::LiftUp));
-                hardware.lift.up(Speed::HALF)?;
+                logbot.up(Speed::HALF).map_err(LogbotError::Lift)?;
             }
             Command::LiftDown => {
                 // Vehicle should be stopped, since lift is a blocking operating
                 // It should be stopped anyway, but this makes sure it is
-                let _ = hardware.vehicle.stop();
+                let _ = logbot.stop();
 
                 let _ = response.send(Ok(Command::LiftDown));
-                hardware.lift.down(Speed::HALF)?;
+                logbot.down(Speed::HALF).map_err(LogbotError::Lift)?;
             }
             Command::Stop => {
-                hardware.vehicle.stop()?;
+                logbot.stop().map_err(LogbotError::Vehicle)?;
                 // The logbot is already currently not doing anything
                 // We can simply return with a success value
                 let _ = response.send(Ok(Command::Stop));
@@ -346,24 +377,4 @@ fn handle_commands(
         };
     }
     Ok(())
-}
-
-/// Convenience struct to pass hardware components around
-#[derive(Debug)]
-pub struct Hardware {
-    pub vehicle: Vehicle<DCMotor<Left>, DCMotor<Right>>,
-    pub sensors: SensorController,
-    pub lift: LiftMotor,
-}
-
-impl TryDefault for Hardware {
-    type Error = anyhow::Error;
-
-    fn try_default() -> std::result::Result<Self, Self::Error> {
-        Ok(Self {
-            vehicle: Vehicle::try_default()?,
-            sensors: SensorController::try_default()?,
-            lift: LiftMotor::try_default()?,
-        })
-    }
 }

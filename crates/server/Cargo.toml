@@ -28,3 +28,4 @@ vehicle.workspace = true
 acceleration.workspace = true
 directions.workspace = true
 demo.workspace = true
+logbot.workspace = true
